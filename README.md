@@ -35,8 +35,10 @@ Next install the required dependencies:
 sudo apt install curl bind9-dnsutils jq
 ```
 
-Then put the following in the
-main **dehydrated** config.
+# Dehydrated Config Settings
+
+Regardless of whether the sript is installed manually or via the package.
+The following is required in the main **dehydrated** config to start using the script.
 
 ```bash
 CHALLENGETYPE="dns-01" 
