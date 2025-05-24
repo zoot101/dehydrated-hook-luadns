@@ -22,7 +22,7 @@ but should work on any distro with the below dependencies installed.
 
 # Usage and Installation
 To install the package provided do the below. Note this has only been tested on Debian
-Bookworm.
+Bookworm. Then continue from editing the **dehydrated** config as below.
 ```bash
 sudo apt install ./dehydrated-hook-luadns_0.8.2-1_amd64_bookworm.db
 ```
