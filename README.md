@@ -28,8 +28,11 @@ For more details a detailed desription is provided in the manual entry that is
 included as part of the debian package installation.
 
 # Usage and Installation
-To install the package provided do the below. Note this has only been tested on Debian
-Bookworm. Then continue from editing the **dehydrated** config as below.
+To install the package provided do the below, the dependencies will be installed
+automatically.
+
+Note this has only been tested on Debian Bookworm and Trixie as of the time of writing, but it should work on other Debian based
+distros also. Then continue from editing the **dehydrated** config as below.
 ```bash
 sudo apt install ./dehydrated-hook-luadns_0.8.2-3_amd64.deb
 ```
