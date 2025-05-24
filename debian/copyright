@@ -1,5 +1,5 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Source: <url://example.com>
+Source: <url://github.com/zoot101/dehydrated-hook-luadns>
 Upstream-Name: dehydrated-hook-luadns
 Upstream-Contact: Mark Finnan <mfinnan101@gmail.com> 
 
