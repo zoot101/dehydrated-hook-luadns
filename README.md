@@ -53,6 +53,7 @@ export automatic_nginx_reload="yes"
 The **CHALLENGETYPE, HOOK**, and **HOOK_CHAIN** options are all
 covered in the wider dehydrated documentation and are not
 considered here.
+https://github.com/dehydrated-io/dehydrated
 
 In the above **lua_email** is your login email for **Luadns.com** and **lua_api_key** is an
 API generated via the Luadns.com login. Note that one needs to enable API access.
