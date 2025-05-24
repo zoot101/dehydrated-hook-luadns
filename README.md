@@ -31,11 +31,14 @@ included as part of the debian package installation.
 To install the package provided do the below. Note this has only been tested on Debian
 Bookworm. Then continue from editing the **dehydrated** config as below.
 ```bash
-sudo apt install ./dehydrated-hook-luadns_0.8.2-1_amd64_bookworm.db
+sudo apt install ./dehydrated-hook-luadns_0.8.2-3_amd64.deb
 ```
 
 Otherwise to install manually, download the hook script, put it somewhere, make it
-executable with **$ chmod +x**
+executable with:
+```bash
+chmod +x dehydrated-hook-luadns
+```
 
 Next install the required dependencies:
 ```bash
