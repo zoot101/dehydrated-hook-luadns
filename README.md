@@ -1,5 +1,6 @@
 # dehydrated-hook-luadns
-Bash only hook script for dehydrated for use with Luadns.com
+Bash only hook script for dehydrated for use with Luadns.com to solve the DNS-01
+challenge to get trusted ssl certificates from LetsEncrypt or other providers.
 
 # Description
 Luadns.com is supported by certain other acme clients like certbot,
