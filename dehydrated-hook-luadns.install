@@ -1,2 +1,0 @@
-#! /usr/bin/dh-exec
-dehydrated-hook-luadns /usr/bin
