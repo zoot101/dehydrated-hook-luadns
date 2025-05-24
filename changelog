@@ -1,0 +1,156 @@
+dehydrated-hook-luadns (0.8.2-2) stable; urgency=medium
+
+  * Added build dependency for dh-exec.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Sat, 24 May 2025 09:47:14 +0100
+
+dehydrated-hook-luadns (0.8.0-1) stable; urgency=medium
+
+  * Fixed issue referred to below whereby the script would hang
+    indefinitely if multiple Record IDs were found with the same
+    name, type AND content.
+
+  * This is an edge case that is probably impossible if used with
+    dehydrated, but is possible to have happen if multiple
+    deploy_challenge calls to the script are made with the same values
+    before being followed by a clean_challenge call.
+
+  * Now the script will delete all Records found for a given name, TXT
+    type and the same content.
+
+  * Man page formatting improvements.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Wed, 21 May 2025 15:54:02 +0100
+
+dehydrated-hook-luadns (0.7.7-1) stable; urgency=medium
+
+  * Added functionality to 1st query the luadns nameservers for the
+    NS records for the zone name (root of the fqdn) passed in via
+    dehydrated.
+
+  * The script will exit if none of the luadns nameservers have any
+    NS records for the domain passed in from dehydrated. This serves as
+    a means to check the domain for validity.
+
+  * The script will now check all of the official nameservers (usually
+    ns1.luadns.net, ns2.luadns.net, ns3.luadns.net and ns4.luadns.net)
+    obtained from the above check for the TXT record after deploying.
+    Previously it would only check ns1.luadns.net.
+
+  * The above functionality was added as it is possible to use vanity
+    nameservers from Luadns.com with their paid plans. This way the script
+    checks the real authorative nameserver after deploying the record.
+
+  * Changed number of retries in the propagation check from 8 to 5.
+
+  * Updates to man page to mention this new functionality.
+
+  * Noting that there is an issue with the clean_challenge function that
+    if there are 2 records with the same name, type AND content whereby
+    the script will hang.
+
+  * This is probably an edge case, but is intended to be fixed for the
+    next version.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Wed, 21 May 2025 14:02:37 +0100
+
+dehydrated-hook-luadns (0.7.1-1) stable; urgency=medium
+
+  * Some minor improvements to the print outs of the function that
+    queries the authortative nameserver (ns1.luadns.net) for the
+    record deployed. It will now print Try 1/8, 2/8 etc.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Fri, 16 May 2025 23:39:57 +0100
+
+dehydrated-hook-luadns (0.7.0-1) stable; urgency=medium
+
+  * Updated man pages to reflect change about awk as a depenency.
+
+  * Updated man page to show how to test the script directly, and
+    encouraged user to try it out before using it with dehydrated
+    to issue real certificates.
+
+  * Changed the function that waits for the record to be deployed to
+    with for an exponentially increasing number of seconds each try.
+
+  * Change the grep from "-qF" to "-qw". Might need to revisit this
+    but it's working well for now.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Fri, 16 May 2025 21:39:09 +0100
+
+dehydrated-hook-luadns (0.6.1-1) stable; urgency=medium
+
+  * Tidied up curl commands with a custom curl_cmd function.
+
+  * Changed method of extracting the zone name to a simplier method
+    using awk instead.
+
+  * Added a check for awk being installed.
+
+  * Streamlined deploy_challenge and clean_challenge print outs to
+    be more consistant.
+
+  * Removed the use of echo to pass the Zone ID or Record ID outside
+    the relevant functions so exit works as expected.
+
+  * Trimmed some of the comments from the main script.
+
+  * Added dependencies for bash and coreutils.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Fri, 16 May 2025 16:47:39 +0100
+
+dehydrated-hook-luadns (0.6.0-1) stable; urgency=medium
+
+  * Added HOOK_CHAIN="yes" support for deploy_challenge and clean_challenge
+    functions. Script will now support just a single call by dehydrated to
+    deploy or clean multiple records/challenges at once.
+
+  * Tidied up message printouts of the script.
+
+  * Updated man page to mention HOOK_CHAIN="yes" is now supported.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Thu, 15 May 2025 20:48:14 +0100
+
+dehydrated-hook-luadns (0.5-1) stable; urgency=medium
+
+  * Changed method of handling input arguments to the exact same method
+    posted in the dehydrated documentation here:
+    https://github.com/dehydrated-io/dehydrated/blob/master/docs/examples/hook.sh
+
+  * Changed reload of nginx to just print an error if not successful,
+    instead of returning an error code so to not interfere with the
+    operation of the master dehydrated script.
+
+  * Added explicit "exit 0" to make sure script exits successfully.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Wed, 14 May 2025 09:33:38 +0100
+
+dehydrated-hook-luadns (0.3-1) stable; urgency=medium
+
+  * Added a deploy_cert function to automatically reload nginx if a new
+    cert is issued. Requires export automatic_nginx_reload="yes" in the
+    main dehydrated config.
+
+  * Noting that long-term supporting HOOK_CHAIN="yes" is a better option
+    to only have nginx reloaded once if multiple certificates are issued.
+
+  * Currently nginx will be reloaded X times if X new certificates are
+    are issued. With HOOK_CHAIN, that would just be once.
+
+  * Also updated postinst script to include this in the print out after
+    a new installation.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Wed, 07 May 2025 09:10:14 +0100
+
+dehydrated-hook-luadns (0.2-1) stable; urgency=medium
+
+  * Added a postinst maintainer script to print instructions on how
+    to use that appears only on a 1st time installation.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Sun, 03 May 2025 20:14:01 +0100
+
+dehydrated-hook-luadns (0.1-1) stable; urgency=medium
+
+  * Initial release.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Sat, 03 May 2025 20:14:44 +0100
