@@ -21,10 +21,10 @@ but should work on any distro with the below dependencies installed.
 * sed   
 
 # Usage and Installation
-To install the package provided do. Note this has only been tested on Debian
+To install the package provided do the below. Note this has only been tested on Debian
 Bookworm.
 ```bash
-apt install ./dehydrated-hook-luadns_0.8.2-1_amd64_bookworm.db
+sudo apt install ./dehydrated-hook-luadns_0.8.2-1_amd64_bookworm.db
 ```
 
 Otherwise to install manually, download the hook script, put it somewhere, make it
@@ -32,7 +32,7 @@ executable with **$ chmod +x**
 
 Next install the required dependencies:
 ```bash
-apt install curl bind9-dnsutils jq
+sudo apt install curl bind9-dnsutils jq
 ```
 
 Then put the following in the
