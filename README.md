@@ -95,15 +95,19 @@ tested directly.
 
 To use the script directly, 1st execute the following commands:
 
-**$ export lua_email="email@example.com"**   
-**$ export lua_api_key="124...abc....uidlsj"**    
+```bash
+export lua_email="email@example.com"
+export lua_api_key="124...abc....uidlsj"
+```
 
 Where **lua_email** and **lua_api_key** are the email login and
 api created by the **Luadns.com** WebUI as mentioned above. You can also 
 source the **dehydrated** config directly, if the required parameters have
 already been added.
 
-**$ source /etc/dehydrated/config**
+```bash
+source /etc/dehydrated/config**
+```
 
 Then follow the below:
 
