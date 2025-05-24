@@ -21,7 +21,13 @@ but should work on any distro with the below dependencies installed.
 * sed   
 
 # Usage and Installation
-If installing manually, download the hook script, put it somewhere, make it
+To install the package provided do. Note this has only been tested on Debian
+Bookworm.
+```bash
+apt install ./dehydrated-hook-luadns_0.8.2-1_amd64_bookworm.db
+```
+
+Otherwise to install manually, download the hook script, put it somewhere, make it
 executable with **$ chmod +x**
 
 Next install the required dependencies:
