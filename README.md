@@ -21,6 +21,13 @@ but should work on any distro with the below dependencies installed.
 * awk   
 * sed   
 
+The script takes in a domain that a certificate is being requested for from **dehydrated**,
+appends "_acme-challenge." to the start, deploys it to the Luadns REST API, checks for propagation,
+and then hands control back to **dehydrated**.
+
+For more details a detailed desription is provided in the manual entry that is
+included as part of the debian package installation.
+
 # Usage and Installation
 To install the package provided do the below. Note this has only been tested on Debian
 Bookworm. Then continue from editing the **dehydrated** config as below.
@@ -42,9 +49,17 @@ Regardless of whether the sript is installed manually or via the package.
 The following is required in the main **dehydrated** config to start using the script.
 
 ```bash
-CHALLENGETYPE="dns-01" 
+CHALLENGETYPE="dns-01"
+
+# If installing via the debian package
+HOOK="/usr/bin/dehydrated-hook-luadns"
+
+# For Manual Installation
 HOOK="/path/to/dehydrated-hook-luadns"   
+
 HOOK_CHAIN="yes"
+
+# Dehydrated Hook (Luadns) Requirements
 export lua_email="email@example.com"
 export lua_api_key="124...abc....uidlsj"  
 export automatic_nginx_reload="yes" 
@@ -106,7 +121,7 @@ source the **dehydrated** config directly, if the required parameters have
 already been added.
 
 ```bash
-source /etc/dehydrated/config**
+source /etc/dehydrated/config
 ```
 
 Then follow the below:
@@ -124,30 +139,34 @@ Supported are:
 ### deploy\_challenge
 For **deploy_challenge** the following arguments are expected,
 
-**$ dehydrated-hook-luadns deploy_challenge \[FQDN\] \[TOKEN\] \[TXT-TOKEN\]**
+```bash
+dehydrated-hook-luadns deploy_challenge [FQDN] [TOKEN] [TXT-TOKEN]
+```
 
-**FQDN:** Fully Qualified Domain Name of Certificate being requested.   
-**TOKEN:** This is actually for the HTTP-01 Challenge and is unused.   
-**TXT-TOKEN:** Value of the TXT Record to be deployed.   
+1. **FQDN:** Fully Qualified Domain Name of Certificate being requested.   
+2. **TOKEN:** This is actually for the HTTP-01 Challenge and is unused here.   
+3. **TXT-TOKEN:** Value of the TXT Record to be deployed.   
 
 For multiple certificates with **HOOK_CHAIN="yes"**, these
 arguments should be in a series like so:     
 
 ```bash
-deploy_challenge fqdn1 token1 txt-token1 fqdn2 token2 txt-token2
+dehydrated-hook-luadns deploy_challenge fqdn1 token1 txt-token1 fqdn2 token2 txt-token2
 ```
 
 ### clean\_challenge
 For **clean_challenge**, the same arguments as **deploy_challenge**
 are expected:
 
-**dehydrated-hook-luadns clean_challenge \[FQDN\] \[TOKEN\] \[TXT-TOKEN\]**
+```bash
+dehydrated-hook-luadns clean_challenge [FQDN] [TOKEN] [TXT-TOKEN]
+```
 
 Likewise, for multiple certificates with **HOOK_CHAIN=\"yes\"**, these
 arguments should be in a series like so:     
 
 ```bash
-clean_challenge fqdn1 token1 txt-token1 fqdn2 token2 txt-token2
+dehydrated-hook-luadns clean_challenge fqdn1 token1 txt-token1 fqdn2 token2 txt-token2
 ```
 
 ### deploy\_cert
@@ -164,4 +183,75 @@ nginx. This requires the parameter in the dehydrated config
 
 Set it to **\"no\"**, comment it out, or omit it in the dehydrated
 config to disable.
+
+# Sample Outputs
+
+Shown below are some sample outputs that will be seen when being used by dehydrated.
+
+```bash
+root : server @ ~ # dehydrated-hook-luadns deploy_challenge test1.example.com file1 token-value
+ + Hook: ############################
+ + Hook: + deploy_challenge: 1 of 1
+ + Hook: ############################
+ + Hook: Name:_acme-challenge.test1.example.com, Type:TXT, Value:token-value
+ + Hook: Zone Name - example.com
+ + Hook: Querying Luadns Nameservers for example.com NS Records...
+ + Hook: --> Querying Nameserver 1/4: ns1.luadns.net
+ + Hook: ----> Success: Obtained 4 NS records for example.com
+ + Hook: Deploying record via https://api.luadns.com/v1...
+ + Hook: --> Getting Zone ID...
+ + Hook: --> Zone ID - 9090
+ + Hook: --> Record successfully deployed.
+ + Hook: Querying all 4 example.com Nameservers for Record...
+ + Hook: --> Nameserver 1/4: ns1.luadns.net.
+ + Hook: ----> Waiting 2 seconds
+ + Hook: ----> Querying for record - Try: 1/5
+ + Hook: ----> Record live
+ + Hook: --> Nameserver 2/4: ns2.luadns.net.
+ + Hook: ----> Waiting 2 seconds
+ + Hook: ----> Querying for record - Try: 1/5
+ + Hook: ----> Record live
+ + Hook: --> Nameserver 3/4: ns3.luadns.net.
+ + Hook: ----> Waiting 2 seconds
+ + Hook: ----> Querying for record - Try: 1/5
+ + Hook: ----> Record live
+ + Hook: --> Nameserver 4/4: ns4.luadns.net.
+ + Hook: ----> Waiting 2 seconds
+ + Hook: ----> Querying for record - Try: 1/5
+ + Hook: ----> Record live
+ + Hook: --> Record successfully deployed and live
+ + Hook: ############################
+ + Hook: + SUCCESS: All Challenges successfully deployed and now live
+ + Hook: ############################
+```
+
+```bash
+root : server @ ~ # dehydrated-hook-luadns clean_challenge test1.example.com file1 token-value
+ + Hook: ############################
+ + Hook: + clean_challenge: 1 of 1
+ + Hook: ############################
+ + Hook: Name:_acme-challenge.test1.example.com, Type:TXT, Value:token-value
+ + Hook: Zone Name - example.com
+ + Hook: Deleting record via https://api.luadns.com/v1...
+ + Hook: --> Getting Zone ID...
+ + Hook: --> Zone ID - 9090
+ + Hook: --> Getting Record ID...
+ + Hook: --> Record ID - 12345
+ + Hook: --> Record: 12345 Successfully Deleted
+ + Hook: ############################
+ + Hook: + SUCCESS: All Challenges cleaned
+ + Hook: ############################
+```
+
+# Credits
+
+I did come across a script written back in 2017 which is still hosted here,
+written by Greg Brackley.
+https://plone.lucidsolutions.co.nz/web/pki/letsencrypt/letsencrypt-with-dehydrated-using-dns-01-on-centos-v7
+
+This script still worked but had issues especially with wildcard certificates and didn't do any check
+for propagation, but it did serve as a starting point. Thanks to him for his work on
+that script.
+
+And also many thanks to lukas2511 for **dehydrated** itself!
 
