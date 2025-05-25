@@ -20,4 +20,8 @@ Depends:
  bind9-dnsutils (>=9.11),
  ${misc:Depends},
 Description: dehydrated hook script for Luadns.com
- Allows solving the dns-01 challenge for dehydrated via Luadns.com
+ * For use with dehydrated
+ * Allows solving the dns-01 challenge for dehydrated via Luadns.com
+ * Deploys the required DNS TXT record and checks for propagation
+   before handing control back to dehydrated.
+

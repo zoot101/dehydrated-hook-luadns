@@ -1,8 +1,34 @@
+dehydrated-hook-luadns (0.8.2-3) stable; urgency=medium
+
+  * Added github link to debian/control and debian/copyright.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Sat, 24 May 2025 17:40:04 +0100
+
 dehydrated-hook-luadns (0.8.2-2) stable; urgency=medium
 
   * Added build dependency for dh-exec.
 
  -- Mark Finnan <mfinnan101@gmail.com>  Sat, 24 May 2025 09:47:14 +0100
+
+dehydrated-hook-luadns (0.8.2-1) stable; urgency=medium
+
+  * Added a section in the manual to talk through the detailed 
+    operation of the script at a low level.
+
+  * Changed to "#!/usr/bin/env bash" from "#!/bin/bash" at top
+    of script.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Thu, 22 May 2025 13:47:34 +0100
+
+dehydrated-hook-luadns (0.8.1-1) stable; urgency=medium
+
+  * Added a check for sed in the check dependencies section of the
+    script. Also included sed in the list of dependencies in the
+    man page.
+
+  * Minor improvements to printouts.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Wed, 21 May 2025 22:34:08 +0100
 
 dehydrated-hook-luadns (0.8.0-1) stable; urgency=medium
 
@@ -53,6 +79,18 @@ dehydrated-hook-luadns (0.7.7-1) stable; urgency=medium
     next version.
 
  -- Mark Finnan <mfinnan101@gmail.com>  Wed, 21 May 2025 14:02:37 +0100
+
+dehydrated-hook-luadns (0.7.2-1) stable; urgency=medium
+
+  * Moved the dig command to query the nameserver for the record
+    being deployed into its own function to make things a bit tidier.
+
+  * Added information to manual about creating an API key via the
+    Luadns.com Web UI.
+
+  * Other minor man page improvements.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Sat, 17 May 2025 11:01:16 +0100
 
 dehydrated-hook-luadns (0.7.1-1) stable; urgency=medium
 
@@ -109,9 +147,17 @@ dehydrated-hook-luadns (0.6.0-1) stable; urgency=medium
 
   * Updated man page to mention HOOK_CHAIN="yes" is now supported.
 
+  * Removed "set -e" to prevent script exiting with all non-zero return
+    codes as this was undesirable behaviour. 
+
+  * Long term would like to re-try API calls if they fail, instead
+    of exiting right away.
+
  -- Mark Finnan <mfinnan101@gmail.com>  Thu, 15 May 2025 20:48:14 +0100
 
 dehydrated-hook-luadns (0.5-1) stable; urgency=medium
+
+  * Removed abort 1 exit function in favor of "set -e".
 
   * Changed method of handling input arguments to the exact same method
     posted in the dehydrated documentation here:
@@ -124,6 +170,20 @@ dehydrated-hook-luadns (0.5-1) stable; urgency=medium
   * Added explicit "exit 0" to make sure script exits successfully.
 
  -- Mark Finnan <mfinnan101@gmail.com>  Wed, 14 May 2025 09:33:38 +0100
+
+dehydrated-hook-luadns (0.3.2-1) stable; urgency=medium
+
+  * Changed nginx reload command to "systemctl reload nginx"
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Wed, 07 May 2025 19:58:14 +0100
+
+dehydrated-hook-luadns (0.3.1-1) stable; urgency=medium
+
+  * Updated manpage to specify deploy_cert is now supported.
+
+  * Trimmed some of the comments from the main script.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Wed, 07 May 2025 11:04:39 +0100
 
 dehydrated-hook-luadns (0.3-1) stable; urgency=medium
 
