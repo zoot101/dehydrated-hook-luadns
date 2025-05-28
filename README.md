@@ -260,7 +260,4 @@ that script.
 
 And also many thanks to lukas2511 for **dehydrated** itself!
 
-# Author
-
-Mark Finnan (mfinnan101@gmail.com)
 
