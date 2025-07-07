@@ -1,3 +1,15 @@
+dehydrated-hook-luadns (0.8.4-1) stable; urgency=medium
+
+  * Added a number of retires to curl calls.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Mon, 07 Jul 2025 21:28:45 +0100
+
+dehydrated-hook-luadns (0.8.3-1) stable; urgency=medium
+
+  * Code cleanup. 
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Sun, 01 Jun 2025 19:47:14 +0100
+
 dehydrated-hook-luadns (0.8.2-3) stable; urgency=medium
 
   * Added github link to debian/control and debian/copyright.

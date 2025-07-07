@@ -8,7 +8,7 @@
 #
 
 # Version Number
-version="0.8.2"
+version="0.8.4"
 
 ###############################
 # VARIABLES
@@ -22,20 +22,20 @@ luadns_nameservers=( "ns1.luadns.net" "ns2.luadns.net" \
 # FUNCTIONS
 ###############################
 # Log functions
-function log1() {
+log1() {
   echo " + Hook:" "$@"
 }
 
-function log2() {
+log2() {
   echo " + Hook: -->" "$@"
 }
 
-function log3() {
+log3() {
   echo " + Hook: ---->" "$@"
 }
 
 # Query an Auth Nameserver for the Zone NS Records
-function query_zone_ns_records() {
+query_zone_ns_records() {
   local auth_nameserver="${1}"
   local fqdn="${2}"
 
@@ -44,7 +44,7 @@ function query_zone_ns_records() {
 }
 
 # Query Auth Nameserver for TXT Record Deployed
-function query_nameserver() {
+query_nameserver() {
   local auth_server="${1}"
   local name="${2}"
   local content="${3}"
@@ -56,14 +56,14 @@ function query_nameserver() {
 }
 
 # Base Curl Command as per the Luadns.com REST API documentation
-function curl_cmd() {
-  curl --silent -u ${lua_email}:${lua_api_key} \
+curl_cmd() {
+  curl --retry 3 --silent -u ${lua_email}:${lua_api_key} \
   -H 'Accept: application/json' "$@"
 }
 
 # Check that the lua_email and lua_api_token variables have been defined
 # and passed into the script correctly.
-function luadns_credentials_check(){
+luadns_credentials_check(){
   if [ -z "${lua_email}" ]
   then
     log1 "ERROR: Luadns Email (lua_email) empty - Exiting"
@@ -78,7 +78,7 @@ function luadns_credentials_check(){
 # Check dependencies are installed. Some of these checks are redundant as
 # dehydrated itself requires the same dependencies but for best practice
 # they're included here also.
-function check_dependencies() {
+check_dependencies() {
 
   # Dependencies are awk, curl, dig, jq and grep
   # Check for Curl
@@ -121,7 +121,7 @@ function check_dependencies() {
 
 # If given a domain name (fqdn), in the following syntax - my.example.tld
 # Break the fqdn apart to isolate the zone name (example.tld)
-function get_zone_name_from_fqdn() {
+get_zone_name_from_fqdn() {
   local fqdn="${1}"
 
   # Exit if the fqdn is empty or does not have at least 1 dot.
@@ -143,7 +143,7 @@ function get_zone_name_from_fqdn() {
 }
 
 # Get NS Records for Zone (Root of the domain passed in)
-function get_zone_nameservers() { 
+get_zone_nameservers() { 
 
   # Try each of the Luadns Nameservers until valid NS Records
   # are obtained. Serves as a way of validating the domain
@@ -194,7 +194,7 @@ function get_zone_nameservers() {
 # Official Documentation is here:
 # https://www.luadns.com/api.html
 
-function check_response_was_valid() {
+check_response_was_valid() {
   # Easiest thing to do is check the length of the string obtained is
   # greater than some number. Using 100 as a number for now...
   local response="${1}"
@@ -209,7 +209,7 @@ function check_response_was_valid() {
 }
 
 # Get the Zone ID for the above Domain Name
-function luadns_get_zone_id() {
+luadns_get_zone_id() {
 
   # Local Variable for Zone Name
   local luadns_zone_name="${1}"
@@ -242,7 +242,7 @@ function luadns_get_zone_id() {
 }
 
 # Create a new record using the Luadns.com API
-function luadns_create_new_record() {
+luadns_create_new_record() {
 
   # Some Local Variables
   local luadns_zone_id="${1}"
@@ -267,10 +267,8 @@ function luadns_create_new_record() {
   # Check Response was valid
   check_response_was_valid "${response}"
 
-  # Check the record was deployed successfully
-  # There should be a "created_at" parameter we can look for in the json data received
-  # A long term goal here could be to check the date and compare it with todays date,
-  # for the moment it is checked that it exists only.
+  # Check the record was deployed successfully. Check for a "created_at"
+  # parameter in the json data received.
   local success_check=$(echo "${response}" | jq ".created_at")
 
   # Check the success check isn't empty
@@ -284,7 +282,7 @@ function luadns_create_new_record() {
 }
 
 # Get the Record ID for a given record using the Luadns.com API
-function luadns_get_record_id() {
+luadns_get_record_id() {
 
   # Initialize input arguments
   local luadns_zone_id="${1}"
@@ -324,7 +322,7 @@ function luadns_get_record_id() {
 }
 
 # Delete a record using the LuaDNS API
-function luadns_delete_record() {
+luadns_delete_record() {
 
   local luadns_zone_id="${1}"
   local luadns_record_id="${2}"
@@ -371,7 +369,7 @@ function luadns_delete_record() {
 
 # Wait for the record to be live on all of the Nameservers obtained
 # from the luadns nameservers
-function wait_for_record_to_propagate() {
+wait_for_record_to_propagate() {
 
   # Wait for publication by querying the authoratitve nameserver
   local delay_time=2
@@ -428,7 +426,7 @@ function wait_for_record_to_propagate() {
 ###############################
 
 # Deploy Single Challenge Function
-function deploy_single_challenge() {
+deploy_single_challenge() {
 
   # Dehydrated Documentation - $1 = Domain, $2 = TXT Record Value
   local domain="${1}" token_filename="${2}" token_value="${3}"
@@ -460,7 +458,7 @@ function deploy_single_challenge() {
 }
 
 # Clean Single Challenge Function
-function clean_single_challenge() {
+clean_single_challenge() {
  
   # Dehydrated Documentation - $1 = Domain, $2 = TXT Record Value
   local domain="${1}" token_filename="${2}" token_value="${3}"
@@ -493,7 +491,7 @@ function clean_single_challenge() {
 }
 
 # Main Deploy Challenge Function
-function deploy_challenge() {
+deploy_challenge() {
 
   # Check necessary dependencies are installed
   check_dependencies
@@ -538,7 +536,7 @@ function deploy_challenge() {
 }
 
 # Main Clean Challenge Function
-function clean_challenge() {
+clean_challenge() {
 
   # Check dependencies
   check_dependencies
@@ -583,7 +581,7 @@ function clean_challenge() {
 }
 
 # Main Deploy Cert Function
-function deploy_cert() {
+deploy_cert() {
 
   # Reload nginx if the following is included in the dehydrated config
   # export automatic_nginx_reload="yes"
