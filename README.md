@@ -45,7 +45,11 @@ chmod +x dehydrated-hook-luadns
 
 Next install the required dependencies:
 ```bash
+# On Debian based distros
 sudo apt install curl bind9-dnsutils jq
+
+# On Fedora
+sudo dnf install curl bind-utils jq
 ```
 
 # Dehydrated Config Settings
