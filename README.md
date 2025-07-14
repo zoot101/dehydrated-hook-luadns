@@ -1,5 +1,7 @@
-# dehydrated-hook-luadns
+# Dehydrated-Hook-Luadns
 dehydrated hook script for Luadns.com to solve the DNS-01 challenge.
+
+https://github.com/dehydrated-io/dehydrated
 
 # Description
 Luadns.com is supported by certain other acme clients like certbot,
@@ -34,7 +36,7 @@ automatically.
 Note this has only been tested on Debian Bookworm and Trixie as of the time of writing, but it should work on other Debian based
 distros also. Then continue from editing the **dehydrated** config as below.
 ```bash
-sudo apt install ./dehydrated-hook-luadns_0.8.2-3_amd64.deb
+sudo apt install ./dehydrated-hook-luadns_0.8.4-1_amd64.deb
 ```
 
 Otherwise to install manually, download the hook script, put it somewhere, make it
@@ -66,6 +68,7 @@ HOOK="/usr/bin/dehydrated-hook-luadns"
 # For Manual Installation
 HOOK="/path/to/dehydrated-hook-luadns"   
 
+# Enable Hook Chain (if desired)
 HOOK_CHAIN="yes"
 
 # Dehydrated Hook (Luadns) Requirements
