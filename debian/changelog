@@ -1,3 +1,19 @@
+dehydrated-hook-luadns (0.8.5-1) stable; urgency=medium
+
+  * Made checks of API server responses more robust.
+
+  * Zone ID is now checked that it is a valid number.
+
+  * Creation of the Record is checked for the same content
+    received back in the json data from the API server,
+    previously it was possible for this check to fail in
+    certain circumstance.
+
+  * Curl errors whould now be printed to allow easier debug of
+    problems.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Fri, 11 Jul 2025 06:59:11 +0100
+
 dehydrated-hook-luadns (0.8.4-1) stable; urgency=medium
 
   * Added a number of retires to curl calls.
