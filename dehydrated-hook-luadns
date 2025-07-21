@@ -8,7 +8,7 @@
 #
 
 # Version Number
-version="0.8.4"
+version="0.8.5"
 
 ###############################
 # VARIABLES
@@ -34,6 +34,16 @@ log3() {
   echo " + Hook: ---->" "$@"
 }
 
+# Function to check if a Variable is a number >= 0
+is_number() {
+  local number_regex='^[0-9]+$'
+  if ! [[ "$1" =~ $number_regex ]]; then
+    return 1
+  else
+    return 0
+  fi
+}
+
 # Query an Auth Nameserver for the Zone NS Records
 query_zone_ns_records() {
   local auth_nameserver="${1}"
@@ -57,7 +67,7 @@ query_nameserver() {
 
 # Base Curl Command as per the Luadns.com REST API documentation
 curl_cmd() {
-  curl --retry 3 --silent -u ${lua_email}:${lua_api_key} \
+  curl --retry 3 --silent --show-error -u ${lua_email}:${lua_api_key} \
   -H 'Accept: application/json' "$@"
 }
 
@@ -81,6 +91,7 @@ luadns_credentials_check(){
 check_dependencies() {
 
   # Dependencies are awk, curl, dig, jq and grep
+
   # Check for Curl
   if [ -z $(which curl) ]
   then
@@ -233,8 +244,8 @@ luadns_get_zone_id() {
   # set to our domain, then select the "id" within that block
   zone_id=$(echo "${response}" | jq ".[] | select(.name==\"${luadns_zone_name}\") | .id") 
 
-  # Check if we got a Zone ID parameter as expected
-  if [ -z "${zone_id}" ]
+  # Check if we got a Zone ID parameter is a valid number
+  if ! is_number "${zone_id}"
   then
     log2 "ERROR: Zone ID could not be obtained"
     exit 1
@@ -267,12 +278,9 @@ luadns_create_new_record() {
   # Check Response was valid
   check_response_was_valid "${response}"
 
-  # Check the record was deployed successfully. Check for a "created_at"
-  # parameter in the json data received.
-  local success_check=$(echo "${response}" | jq ".created_at")
-
-  # Check the success check isn't empty
-  if [ -n "${success_check}" ]
+  # Check the record content deployed was received back
+  local success_check=$(echo "${response}" | jq ".content")
+  if [ "${success_check}" == \""${luadns_record_content}"\" ]
   then
     log2 "Record successfully deployed."
   else
@@ -304,16 +312,11 @@ luadns_get_record_id() {
   check_response_was_valid "${response}"
 
   # Process the json data received to pull out the record ID of type TXT that has
-  # the name AND the content value we want to delete. It's not enough to just
-  # go by name as for wildcard certs, two records with the same name and different
-  # content are deployed.
-
-  # Note that the below will return multiple record ID numbers
-  # if by some weird chance there are multiple records with the same name, type AND
-  # content
+  # the name AND the content value we want to delete.
   record_id=$(echo "${response}" | jq ".records | .[] | select(.name==\"${luadns_record_name}\" and .type==\"TXT\" and .content==\"${luadns_record_content}\") | .id")
 
-  # Check the Obtained Record ID is not Empty
+  # Check the Obtained Record ID is not Empty. Can't use the number check here
+  # as it is possible to get multiple record IDs back
   if [ -z "${record_id}" ]
   then
     log2 "ERROR: Record ID could not be obtained"
