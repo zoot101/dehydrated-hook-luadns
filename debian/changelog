@@ -1,3 +1,17 @@
+dehydrated-hook-luadns (0.8.6-1) stable; urgency=medium
+
+  * Tidied up jq script calls for parsing json data received.
+
+  * Changed the query for the zone records to directly query
+    the zone records to simplify the process of obtaining the
+    record ID.
+
+  * Changed the number of retries to query for the record to 7
+    from 5 to allow a wait time of up to 128 seconds between
+    tries after deploying the challenge.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Mon, 21 Jul 2025 16:32:07 +0100
+
 dehydrated-hook-luadns (0.8.5-1) stable; urgency=medium
 
   * Made checks of API server responses more robust.

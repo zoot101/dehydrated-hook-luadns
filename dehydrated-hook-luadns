@@ -8,7 +8,7 @@
 #
 
 # Version Number
-version="0.8.5"
+version="0.8.6"
 
 ###############################
 # VARIABLES
@@ -242,7 +242,7 @@ luadns_get_zone_id() {
   # Parse Response with jq command. jq syntax - Traverse
   # down a level, then select the block that has the "name" parameter
   # set to our domain, then select the "id" within that block
-  zone_id=$(echo "${response}" | jq ".[] | select(.name==\"${luadns_zone_name}\") | .id") 
+  zone_id=$(echo "${response}" | jq ".[] | select(.name==\"${luadns_zone_name}\").id") 
 
   # Check if we got a Zone ID parameter is a valid number
   if ! is_number "${zone_id}"
@@ -306,14 +306,14 @@ luadns_get_record_id() {
   fi
 
   # Get the record id for the above record using the API.
-  local response=$(curl_cmd "${lua_api_url}"/zones/${luadns_zone_id})
+  local response=$(curl_cmd "${lua_api_url}"/zones/${luadns_zone_id}/records)
 
   # Check Response was valid
   check_response_was_valid "${response}"
 
   # Process the json data received to pull out the record ID of type TXT that has
   # the name AND the content value we want to delete.
-  record_id=$(echo "${response}" | jq ".records | .[] | select(.name==\"${luadns_record_name}\" and .type==\"TXT\" and .content==\"${luadns_record_content}\") | .id")
+  record_id=$(echo "${response}" | jq ".[] | select(.name==\"${luadns_record_name}\" and .type==\"TXT\" and .content==\"${luadns_record_content}\").id")
 
   # Check the Obtained Record ID is not Empty. Can't use the number check here
   # as it is possible to get multiple record IDs back
@@ -376,7 +376,7 @@ wait_for_record_to_propagate() {
 
   # Wait for publication by querying the authoratitve nameserver
   local delay_time=2
-  local retries=5
+  local retries=7
   local luadns_record_name="${1}" 
   local luadns_record_content="${2}"
   local i=1
