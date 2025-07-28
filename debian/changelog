@@ -1,3 +1,11 @@
+dehydrated-hook-luadns (0.8.7-1) stable; urgency=medium
+
+  * Completed lintian check on debian package - all clean.
+
+  * Minor refinements to man page.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Mon, 28 Jul 2025 22:12:17 +0100
+
 dehydrated-hook-luadns (0.8.6-1) stable; urgency=medium
 
   * Tidied up jq script calls for parsing json data received.
@@ -144,7 +152,7 @@ dehydrated-hook-luadns (0.7.1-1) stable; urgency=medium
 
 dehydrated-hook-luadns (0.7.0-1) stable; urgency=medium
 
-  * Updated man pages to reflect change about awk as a depenency.
+  * Updated man pages to reflect change about awk as a dependency.
 
   * Updated man page to show how to test the script directly, and
     encouraged user to try it out before using it with dehydrated
@@ -233,12 +241,6 @@ dehydrated-hook-luadns (0.3-1) stable; urgency=medium
     cert is issued. Requires export automatic_nginx_reload="yes" in the
     main dehydrated config.
 
-  * Noting that long-term supporting HOOK_CHAIN="yes" is a better option
-    to only have nginx reloaded once if multiple certificates are issued.
-
-  * Currently nginx will be reloaded X times if X new certificates are
-    are issued. With HOOK_CHAIN, that would just be once.
-
   * Also updated postinst script to include this in the print out after
     a new installation.
 
@@ -255,4 +257,4 @@ dehydrated-hook-luadns (0.1-1) stable; urgency=medium
 
   * Initial release.
 
- -- Mark Finnan <mfinnan101@gmail.com>  Sat, 03 May 2025 20:14:44 +0100
+ -- Mark Finnan <mfinnan101@gmail.com>  Thu, 01 May 2025 17:11:18 +0100
