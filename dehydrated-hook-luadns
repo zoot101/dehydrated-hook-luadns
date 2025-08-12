@@ -2,13 +2,14 @@
 ###############################
 # DEHYDRATED HOOK SCRIPT FOR LUADNS.COM
 ###############################
-# Copyright (C) Mark Finnan (2025)
+# Github Page: https://github.com/zoot101/dehydrated-hook-luadns
 ###############################
+#
 # Script Dependencies are: awk, dig, grep, jq, curl
 #
 
 # Version Number
-version="0.8.7"
+version="0.8.8"
 
 ###############################
 # VARIABLES
@@ -44,25 +45,19 @@ is_number() {
   fi
 }
 
-# Query an Auth Nameserver for the Zone NS Records
+# Query an Auth Nameserver for the Zone NS Records using dig
 query_zone_ns_records() {
   local auth_nameserver="${1}"
   local fqdn="${2}"
-
-  # Call Dig to Get the NS Records
-  dig +short @"${auth_nameserver}" NS "${fqdn}"
+  dig +short +retry=3 @"${auth_nameserver}" NS "${fqdn}"
 }
 
-# Query Auth Nameserver for TXT Record Deployed
+# Query Auth Nameserver for TXT Record Deployed using dig
 query_nameserver() {
   local auth_server="${1}"
   local name="${2}"
   local content="${3}"
-
-  # Call Dig to Query the nameserver for the record. grep is required
-  # here as for wildcard certs multiple records with the same name are
-  # deployed with different content
-  dig +short @"${auth_server}" TXT "${name}" | grep -qw "${content}"
+  dig +short +retry=3 @"${auth_server}" TXT "${name}" | grep -qw "${content}"
 }
 
 # Base Curl Command as per the Luadns.com REST API documentation
@@ -72,80 +67,51 @@ curl_cmd() {
 }
 
 # Check that the lua_email and lua_api_token variables have been defined
-# and passed into the script correctly.
 luadns_credentials_check(){
-  if [ -z "${lua_email}" ]
-  then
+  if [ -z "${lua_email}" ]; then
     log1 "ERROR: Luadns Email (lua_email) empty - Exiting"
     exit 1
-  elif [ -z "${lua_api_key}" ]
-  then
+  elif [ -z "${lua_api_key}" ]; then
     log1 "ERROR: Luadns API Key (lua_api_key) empty - Exiting"
     exit 1
   fi
 }
 
-# Check dependencies are installed. Some of these checks are redundant as
-# dehydrated itself requires the same dependencies but for best practice
-# they're included here also.
+# Check dependencies are installed
 check_dependencies() {
-
-  # Dependencies are awk, curl, dig, jq and grep
-
-  # Check for Curl
-  if [ -z $(which curl) ]
-  then
+  if [ -z $(which curl) ]; then
     log1 "ERROR: curl is not installed - Exiting"
     exit 1
-  
-  # Check for dig
-  elif [ -z $(which dig) ]
-  then
+  elif [ -z $(which dig) ]; then
     log1 "ERROR: dig is not installed - Exiting"
     exit 1
-
-  # Check for grep
-  elif [ -z $(which grep) ]
-  then
+  elif [ -z $(which grep) ]; then
     log1 "ERROR: grep is not installed - Exiting"
     exit 1
-
-  # Check for awk
-  elif [ -z $(which awk) ]
-  then
+  elif [ -z $(which awk) ]; then
     log1 "ERROR: awk is not installed - Exiting"
     exit 1
-
-  # Check for sed
-  elif [ -z $(which sed) ]
-  then
+  elif [ -z $(which sed) ]; then
     log1 "ERROR: sed is not installed - Exiting"
     exit 1
-
-  # Check for jq
-  elif [ -z $(which jq) ]
-  then
+  elif [ -z $(which jq) ]; then
     log1 "ERROR: jq is not installed - Exiting"
     exit 1
   fi 
 }
 
-# If given a domain name (fqdn), in the following syntax - my.example.tld
 # Break the fqdn apart to isolate the zone name (example.tld)
 get_zone_name_from_fqdn() {
   local fqdn="${1}"
 
   # Exit if the fqdn is empty or does not have at least 1 dot.
-  if [ -z "${fqdn}" ] || [ -z $( echo "${fqdn}" | awk -F "." '{print $2}') ] 
-  then
+  if [ -z "${fqdn}" ] || [ -z $( echo "${fqdn}" | awk -F "." '{print $2}') ]; then
     log1 "ERROR (Invalid fqdn supplied)"
     exit 1
   fi
  
-  # Remove trailing dot if present. For getting the Zone ID the dot
-  # is undesired, but for record IDs it is needed.
-  if [ "${fqdn:0-1}" == "." ]
-  then 
+  # Remove trailing dot - required to present for Record ID, but not Zone ID
+  if [ "${fqdn:0-1}" == "." ]; then 
     fqdn="${fqdn::i-1}"
   fi
  
@@ -156,42 +122,30 @@ get_zone_name_from_fqdn() {
 # Get NS Records for Zone (Root of the domain passed in)
 get_zone_nameservers() { 
 
-  # Try each of the Luadns Nameservers until valid NS Records
-  # are obtained. Serves as a way of validating the domain
-  # before contacting the Luadns Rest API
-
   # Zone Name
   local zone="${1}"
 
   # Number of starting nameservers
   local N_luadns_nameservers=${#luadns_nameservers[@]}
-
   log1 "Querying Luadns Nameservers for" "${zone}" "NS Records..."
 
-  # Loop through each of the nameservers defined at the start of the script
-  # and query each one of them for NS records for the Zone name. Stop when
-  # valid NS records are found
-  for i in $(seq 0 1 $((N_luadns_nameservers-1)))
-  do
+  # Query each of the nameservers defined above for NS Records
+  for i in $(seq 0 1 $((N_luadns_nameservers-1))); do
     log2 "Querying Nameserver" $((i+1))"/"$N_luadns_nameservers":" "${luadns_nameservers[$i]}"
 
     # Call above function to use dig to get NS records
-    if ! zone_ns_records=$(query_zone_ns_records "${luadns_nameservers[$i]}" "${zone}")
-    then
+    if ! zone_ns_records=$(query_zone_ns_records "${luadns_nameservers[$i]}" "${zone}"); then
       log3 "No NS records obtained from" "${luadns_nameservers[$i]}" "- Trying Next Nameserver..."
 
     else
       # Got a Valid Reply - Get number of nameservers obtained
       N_zone_ns_records=$( echo "${zone_ns_records}" | wc -l)
-
-      # Print Success and break
       log3 "Success: Obtained" $N_zone_ns_records "NS records for" "${zone}"
       break
     fi
 
     # Otherwise check if all initial nameservers have been tried
-    if [ $i == $((N_luadns_nameservers-1)) ]
-    then
+    if [ $i == $((N_luadns_nameservers-1)) ]; then
       log3 "ERROR: Could not find NS records for" "${zone}" "from any Luadns Nameserver"
       log3 "       Is the domain correct and using Luadns Nameservers?"
       exit 1
@@ -202,18 +156,12 @@ get_zone_nameservers() {
 ###############################
 # LUADNS API FUNCTIONS
 ###############################
-# Official Documentation is here:
-# https://www.luadns.com/api.html
+# Official Documentation is https://www.luadns.com/api.html
 
 check_response_was_valid() {
-  # Easiest thing to do is check the length of the string obtained is
-  # greater than some number. Using 100 as a number for now...
+  # Easiest thing to do is check the length of the string obtained
   local response="${1}"
-
-  # Check Response is valid by looking at length of the string, long
-  # term - might re-try the api call instead...
-  if [ ${#response} -lt 100 ]
-  then
+  if [ ${#response} -lt 100 ]; then
     log2 "ERROR: Invalid Response received from server - Exiting."
     exit 1
   fi 
@@ -221,32 +169,21 @@ check_response_was_valid() {
 
 # Get the Zone ID for the above Domain Name
 luadns_get_zone_id() {
-
-  # Local Variable for Zone Name
   local luadns_zone_name="${1}"
 
-  # Sanity Check that the zone_name given is not empty. This is
-  # probably redundant, but decided to add anyway
-  if [ -z "${luadns_zone_name}" ]
-  then
+  # Sanity Check that the zone_name given is not empty.
+  if [ -z "${luadns_zone_name}" ]; then
     log2 "ERROR: (Zone Name is empty)"
     exit 1
   fi
 
   # Get the Zone ID for the Domain Above using the API
   local response=$( curl_cmd "${lua_api_url}"/zones ) 
-
-  # Check Response was valid
   check_response_was_valid "${response}"
 
-  # Parse Response with jq command. jq syntax - Traverse
-  # down a level, then select the block that has the "name" parameter
-  # set to our domain, then select the "id" within that block
+  # Parse Response with jq command to pick out the Zone ID & Check if it's a number
   zone_id=$(echo "${response}" | jq ".[] | select(.name==\"${luadns_zone_name}\").id") 
-
-  # Check if we got a Zone ID parameter is a valid number
-  if ! is_number "${zone_id}"
-  then
+  if ! is_number "${zone_id}"; then
     log2 "ERROR: Zone ID could not be obtained"
     exit 1
   fi
@@ -254,34 +191,25 @@ luadns_get_zone_id() {
 
 # Create a new record using the Luadns.com API
 luadns_create_new_record() {
-
-  # Some Local Variables
   local luadns_zone_id="${1}"
   local luadns_record="${2}"
   local luadns_record_type="${3}"
   local luadns_record_content="${4}"
 
-  # Check for Trailing dot, if it's not there add it. This is
-  # required to create a new record successfully
-  if [ "${luadns_record:0-1}" != "." ]
-  then
-    # Add a trailing dot to the record name if its last
-    # character is not already a dot.
+  # Add trailing dot if not present - required for the Record ID
+  if [ "${luadns_record:0-1}" != "." ]; then
     luadns_record="${luadns_record}""."
   fi
 
-  # Create New Record as per official API Documentation
+  # Create New Record as per official API Documentation & Check Response
   local response=$(curl_cmd -X POST \
     -d "{ \":zone_id\":${luadns_zone_id}, \"name\":\"${luadns_record}\", \"type\":\"${luadns_record_type}\", \"content\":\"${luadns_record_content}\"}" \
     "${lua_api_url}"/zones/$zone_id/records)
-
-  # Check Response was valid
   check_response_was_valid "${response}"
 
   # Check the record content deployed was received back
   local success_check=$(echo "${response}" | jq ".content")
-  if [ "${success_check}" == \""${luadns_record_content}"\" ]
-  then
+  if [ "${success_check}" == \""${luadns_record_content}"\" ]; then
     log2 "Record successfully deployed."
   else
     log2 "ERROR: Problem deploying record"
@@ -291,34 +219,23 @@ luadns_create_new_record() {
 
 # Get the Record ID for a given record using the Luadns.com API
 luadns_get_record_id() {
-
-  # Initialize input arguments
   local luadns_zone_id="${1}"
   local luadns_record_name="${2}"
   local luadns_record_content="${3}"
 
-  # Check for Trailing dot, if it's not there add it. This seems to be
-  # required to locate the record id correctly
-  if [ "${luadns_record_name:0-1}" != "." ]
-  then
-    # Add a trailing dot to the record name if required
+  # Add trailing dot if not present - required for the Record ID
+  if [ "${luadns_record_name:0-1}" != "." ]; then
     luadns_record_name="${luadns_record_name}""."
   fi
 
-  # Get the record id for the above record using the API.
+  # Get the record id for the above record using the API & Check Response
   local response=$(curl_cmd "${lua_api_url}"/zones/${luadns_zone_id}/records)
-
-  # Check Response was valid
   check_response_was_valid "${response}"
 
-  # Process the json data received to pull out the record ID of type TXT that has
-  # the name AND the content value we want to delete.
+  # Process the json data received to select TXT Type, Name and Content & Check Response
+  # (Can't use number check here as in certain edge cases multiple IDs are received...)
   record_id=$(echo "${response}" | jq ".[] | select(.name==\"${luadns_record_name}\" and .type==\"TXT\" and .content==\"${luadns_record_content}\").id")
-
-  # Check the Obtained Record ID is not Empty. Can't use the number check here
-  # as it is possible to get multiple record IDs back
-  if [ -z "${record_id}" ]
-  then
+  if [ -z "${record_id}" ]; then
     log2 "ERROR: Record ID could not be obtained"
     exit 1
   fi
@@ -326,42 +243,27 @@ luadns_get_record_id() {
 
 # Delete a record using the LuaDNS API
 luadns_delete_record() {
-
   local luadns_zone_id="${1}"
   local luadns_record_id="${2}"
   local k=0
 
-  # Do a check for multiple record IDs, this can happen if there are multiple
-  # records with the same name, type and content. This is probably impossible
-  # to happen with dehydrated, but with calling the script directly, it's possible
-  # to have this happen if the challenge isn't cleaned by accident after its deployed.
+  # Do a check for multiple record IDs and loop through them if found
   local N_luadns_record_id=$( echo "${luadns_record_id}" | wc -l)
-
-  if [ $N_luadns_record_id != 1 ]
-  then
+  if [ $N_luadns_record_id != 1 ]; then
     log2 "Found" $N_luadns_record_id "Record IDs?? - Will delete all of them"
   fi
 
   # Loop through all record IDs
-  for k in $(seq 1 1 $N_luadns_record_id)
-  do
+  for k in $(seq 1 1 $N_luadns_record_id); do
     local luadns_record_id_2=$(echo "${luadns_record_id}" | sed -n "$k"p)
 
-    # Use the zone_id and the record_id to delete the record as per
-    # the API Documentation
+    # Use the zone_id and the record_id to delete the record & Check Response
     local response=$(curl_cmd -X DELETE "${lua_api_url}"/zones/${luadns_zone_id}/records/${luadns_record_id_2})
-  
-    # Check Response was valid
     check_response_was_valid "${response}"
   
-    # Need to check the response for success. Decided to check if we get
-    # the same record id back from the api server that we sent it to test
-    # if the record has been successfully deleted
-    local success_check=$(echo "${response}" | jq ".id")
-  
     # Check for success - Was the same record id returned after the deletion?
-    if [ "${success_check}" == "${luadns_record_id_2}" ]
-    then
+    local success_check=$(echo "${response}" | jq ".id")
+    if [ "${success_check}" == "${luadns_record_id_2}" ]; then
       log2 "Record:" "${luadns_record_id_2}" "Successfully Deleted"
     else
       log2 "ERROR: Problem Deleting Record" "${luadns_record_id_2}"
@@ -370,32 +272,23 @@ luadns_delete_record() {
   done
 }
 
-# Wait for the record to be live on all of the Nameservers obtained
-# from the luadns nameservers
+# Wait for the record to be live on all of the Nameservers obtained earlier
 wait_for_record_to_propagate() {
-
-  # Wait for publication by querying the authoratitve nameserver
   local delay_time=2
-  local retries=7
+  local retries=11
   local luadns_record_name="${1}" 
   local luadns_record_content="${2}"
   local i=1
   local j=1
-
   log1 "Querying all" $N_zone_ns_records "${zone_name}" "Nameservers for Record..."
 
-  # Loop through each of the Zone NS Records to Query each of them for
-  # the record deployed above up to a maximum of $retries
-  for j in $(seq 1 1 $N_zone_ns_records)
-  do
-
-    # Get Nameserver to query
+  # Loop through each of the Zone NS Records to Query each of them
+  for j in $(seq 1 1 $N_zone_ns_records); do
     local nameserver=$(echo "${zone_ns_records}" | sed -n "$j"p)
     log2 "Nameserver" $j"/"$N_zone_ns_records":" "${nameserver}" 
   
     # Try up to a maximum of $retries..
-    for i in $(seq 1 1 $retries)
-    do
+    for i in $(seq 1 1 $retries); do
   
       # Wait delay_time^i seconds so the wait time doubles each try...
       wait_time=$(($delay_time**$i))
@@ -404,13 +297,10 @@ wait_for_record_to_propagate() {
     
       # Check to see if the record has been deployed or not
       log3 "Querying for record - Try:" $i"/"$retries
-  
-      if query_nameserver "${nameserver}" "${luadns_record_name}" "${luadns_record_content}"
-      then
+      if query_nameserver "${nameserver}" "${luadns_record_name}" "${luadns_record_content}"; then
         log3 "Record live"
         break
-      elif [ $i == $retries ]
-      then
+      elif [ $i == $retries ]; then
         log3 "ERROR: Record not live after" $retries "tries - Exiting"
         exit 1
       else
@@ -424,14 +314,23 @@ wait_for_record_to_propagate() {
   log2 "Record successfully deployed and live"
 }
 
+# Check number of arguments are divisble by 3 - Required for HOOK_CHAIN
+check_div_by_3() {
+  local args_number1=$#
+  local args_number_check=$(( args_number1 % 3))
+  if [ $args_number_check != 0 ]; then
+    log1 "ERROR: Invalid number of arguments specified - It should be a"
+    log1 "       multiple of 3 - Exiting"
+    exit 1
+  fi
+}
+
 ###############################
 # MAIN SCRIPT FUNCTIONS
 ###############################
 
-# Deploy Single Challenge Function
+# Deploy Single Challenge Function - $1 = Domain, $2 = TXT Record Value
 deploy_single_challenge() {
-
-  # Dehydrated Documentation - $1 = Domain, $2 = TXT Record Value
   local domain="${1}" token_filename="${2}" token_value="${3}"
 
   # Append the "_acme-challenge." to the domain
@@ -443,9 +342,7 @@ deploy_single_challenge() {
   log1 "Zone Name -" "${zone_name}"
 
   # Now Query the Luadns nameservers for the actual NS records
-  # of the Zone Name (Root Domain of Record passed from dehydrated)
   get_zone_nameservers "${zone_name}"
- 
   log1 "Deploying record via" "${lua_api_url}""..."
 
   # Get Zone ID From LuaDNS API...
@@ -455,15 +352,11 @@ deploy_single_challenge() {
 
   # Create Record using LuaDNS API (Type TXT) & Wait for Publication
   luadns_create_new_record "${zone_id}" "${record_name}" "TXT" "${token_value}"
-
-  # Wait for the record to be live on the auth nameserver
   wait_for_record_to_propagate "${record_name}" "${token_value}"
 }
 
-# Clean Single Challenge Function
+# Clean Single Challenge Function - $1 = Domain, $2 = TXT Record Value
 clean_single_challenge() {
- 
-  # Dehydrated Documentation - $1 = Domain, $2 = TXT Record Value
   local domain="${1}" token_filename="${2}" token_value="${3}"
 
   # Append the "_acme-challenge." to the domain 
@@ -473,7 +366,6 @@ clean_single_challenge() {
   # Extract the Root Domain to allow getting the Zone ID
   get_zone_name_from_fqdn $domain
   log1 "Zone Name -" "${zone_name}"
-
   log1 "Deleting record via" "${lua_api_url}""..."
 
   # Get the Zone ID From LuaDNS API...
@@ -485,43 +377,30 @@ clean_single_challenge() {
   log2 "Getting Record ID..."
   luadns_get_record_id ${zone_id} ${record_name} "${token_value}"
 
-  # Just Print the 1st Record ID found in the weird chance that there
-  # are multiple records with the same name, type and content present
+  # Print the 1st Record ID found and delete the record
   log2 "Record ID -" $(echo "${record_id}" | sed -n 1p)
-
-  # Now use the Zone ID & Record ID to delete the record
   luadns_delete_record "${zone_id}" "${record_id}" 
 }
 
 # Main Deploy Challenge Function
 deploy_challenge() {
 
-  # Check necessary dependencies are installed
+  # Check depedencies and Credentials
   check_dependencies
-
-  # Check for LuaDNS Credentials (lua_email & lua_api_key)
   luadns_credentials_check
 
-  # Compute Number of Arguments Passed In
+  # Compute Number of Arguments Passed In - Check if divisible by 3
   local args_number=$#
-
-  # Check that it is divisible by 3 - if not exit with an error
-  local args_number_check=$(( args_number % 3))
-  if [ $args_number_check != 0 ]
-  then
-    log1 "ERROR: Invalid number of arguments specified - It should be a"
-    log1 "       multiple of 3 - Exiting"
-    exit 1
-  fi
-
-  # Now Determine the Number of Challenges to Deploy
+  check_div_by_3 "$@"
   local challenges_number=$(( args_number / 3 ))
 
-  # Now Loop Through the Input Parameters and call the
-  # deploy_challenge_single function for each group of 3 of them
+  # Print Greeting Banner
+  log1 "############################"
+  log1 "# Dehydrated-Hook-Luadns Version: ${version}"
+
+  # Loop Through the Input Parameters in groups of 3
   index_d=1
-  while (( ${#} ))
-  do
+  while (( ${#} )); do
     log1 "############################"
     log1 "+ deploy_challenge:" $index_d "of" $challenges_number
     log1 "############################"
@@ -529,44 +408,31 @@ deploy_challenge() {
     shift 3
     index_d=$((index_d+1))
   done
-
   log1 "############################"
   log1 "+ SUCCESS: All Challenges successfully deployed and now live"
   log1 "############################"
-
-  # Exit with Success
   exit 0
 }
 
 # Main Clean Challenge Function
 clean_challenge() {
 
-  # Check dependencies
+  # Check dependencies and Credentials
   check_dependencies
-
-  # Check for LuaDNS Credentials (lua_email & lua_api_key)
   luadns_credentials_check
 
-  # Compute Number of Arguments Passed In
+  # Compute Number of Arguments Passed In - Check if divisible by 3
   local args_number=$#
-
-  # Check that it is divisible by 3 - if not exit with an error
-  local args_number_check=$(( args_number % 3))
-  if [ $args_number_check != 0 ]
-  then
-    log1 "ERROR: Invalid number of arguments specified - It should be a"
-    log1 "       multiple of 3 - Exiting"
-    exit 1
-  fi
-
-  # Now Determine the Number of Challenges to Clean
+  check_div_by_3 "$@"
   local challenges_number=$(( args_number / 3 ))
 
-  # Now Loop Through the Input Parameters and call the
-  # clean_challenge_single function for each group of 3 of them
+  # Print Greeting Banner
+  log1 "############################"
+  log1 "# Dehydrated-Hook-Luadns Version: ${version}"
+
+  # Now Loop Through the Input Parameters in groups of 3
   index_c=1
-  while (( ${#} ))
-  do
+  while (( ${#} )); do
     log1 "############################"
     log1 "+ clean_challenge:" $index_c "of" $challenges_number
     log1 "############################"
@@ -574,12 +440,9 @@ clean_challenge() {
     shift 3
     index_c=$((index_c+1))
   done
-
   log1 "############################"
   log1 "+ SUCCESS: All Challenges cleaned"
   log1 "############################"
-
-  # Exit with Success
   exit 0
 }
 
@@ -587,19 +450,12 @@ clean_challenge() {
 deploy_cert() {
 
   # Reload nginx if the following is included in the dehydrated config
-  # export automatic_nginx_reload="yes"
   if [ ! -z "${automatic_nginx_reload}" ]
   then
-    if [ "${automatic_nginx_reload}" == "yes" ]
-    then
-      
+    if [ "${automatic_nginx_reload}" == "yes" ]; then
       log1 "Reloading nginx..."
-      # Reload nginx via systemctl but prevent the script throwing
-      # errors if the reload is not successful such to not interfere
-      # with the normal operation
+      # Reload nginx via systemctl but prevent the script throwing an error
       systemctl reload nginx || log2 "Problem reloading nginx..."
-
-      # Exit with success
       exit 0
     fi
   fi
@@ -608,29 +464,11 @@ deploy_cert() {
 ###############################
 # SCRIPT START
 ###############################
-# dehydrated documentation:
-# https://github.com/dehydrated-io/dehydrated/blob/master/docs/dns-verification.md
-#
 # Valid Arguments for the Script are "deploy_challenge", "clean_challenge" and
-# "deploy_cert" only.
-#
-# For deploy_challenge, script is called with:
-# ./hook.sh deploy_challenge ${fqdn} ${challenge-token} ${txt_token} 
-# Where: 
-# $1 - operation name
-# $2 - fqdn is the domain name given
-# $3 - challenge-token is a file for the http-01 challenge (not used here)
-# $4 - txt_token
-###############################
-
+# "deploy_cert" only. Exit cleanly for all other unrecognised arguments
 HANDLER="$1"; shift
-if [[ "${HANDLER}" =~ ^(deploy_challenge|clean_challenge|deploy_cert)$ ]]
-then
-  # If a supported argument is passed in act on it
+if [[ "${HANDLER}" =~ ^(deploy_challenge|clean_challenge|deploy_cert)$ ]]; then
   "$HANDLER" "$@"
-
 else
-  # Otherwise Exit Cleanly for all other arguments
   exit 0
 fi
-
