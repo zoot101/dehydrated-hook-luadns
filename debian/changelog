@@ -1,3 +1,33 @@
+dehydrated-hook-luadns (0.8.8-1) stable; urgency=medium
+
+  * Increased number of retries to 11 when querying nameservers
+    after deploying record, for waits of up to 2, 4, 8, 16, 32, 64, 128,
+    256, 512, 1024 and 2048 seconds respectively. This gives a max
+    wait time of ~34minutes which is surely enough - Closes #1.
+    - This is in case the nameservers are slow to update and answer
+      queries with the new record which usually doesn't happen but is
+      sometimes possible - Closes #1.
+
+  * Added a number of retries (3) to all dig calls.
+
+  * Code cleanup and trimmed comments.
+
+  * Removed copyright from main script in favor of debian/copyright.
+
+  * Added a banner print out showing the Script Version.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Tue, 12 Aug 2025 13:27:30 +0100
+
+dehydrated-hook-luadns (0.8.7-2) stable; urgency=medium
+
+  * Removed build dependency on dh-make as it wasn't being used.
+
+  * Tweaked debian/rules to satisfy a remaining lintian warning.
+
+  * Package is now 100% lintian clean with no overrides.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Sun, 03 Aug 2025 14:54:59 +0100
+
 dehydrated-hook-luadns (0.8.7-1) stable; urgency=medium
 
   * Completed lintian check on debian package - all clean.
