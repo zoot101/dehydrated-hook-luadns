@@ -1,16 +1,19 @@
 # Dehydrated-Hook-Luadns
+
 dehydrated hook script for Luadns.com to solve the DNS-01 challenge.
 
-https://github.com/dehydrated-io/dehydrated
+* [https://github.com/dehydrated-io/dehydrated](https://github.com/dehydrated-io/dehydrated)
 
 # Description
-Luadns.com is supported by certain other acme clients like certbot,
-or acme.sh, but there did not seem to be any bash script out there
-for **dehydrated**. So that was the motivation for the author to
-create this script.
 
-It has worked very well for the author to date, so hopefully it will be
-of use to someone else!
+[Luadns.com](https://luadns.com) is supported by certain other acme clients like certbot,
+or acme.sh, but there did not seem to be any hook script out there
+for **dehydrated**. 
+
+As **Luadns.com** is a very good and unique DNS provider, that was the motivation for
+the author to create this hook script.
+
+It has worked very well for the author to date, so hopefully it will be of use to someone else!
 
 It has only been tested on Debian Bookworm and Trixie at the time of writing
 but should work on any distro with the below dependencies installed.
@@ -23,29 +26,49 @@ but should work on any distro with the below dependencies installed.
 * sed   
 
 The script takes in a domain that a certificate is being requested for from **dehydrated**,
-appends "_acme-challenge." to the start, deploys it to the Luadns REST API, checks for propagation,
+appends "\_acme-challenge." to the start, deploys it to the Luadns REST API, checks for propagation,
 and then hands control back to **dehydrated**.
 
 For more details a detailed desription is provided in the manual entry that is
 included as part of the debian package installation.
 
 # Usage and Installation
-To install the package provided do the below, the dependencies will be installed
-automatically.
+
+If running Debian or one of its derivaties its recommended to install the package so all of
+the dependencies will be installed manually.
+
+## Package Installation
+
+To install the package download the latest package from the relases page [HERE](https://github.com/zoot101/dehydrated-hook-luadns/releases)
 
 Note this has only been tested on Debian Bookworm and Trixie as of the time of writing, but it should work on other Debian based
-distros also. Then continue from editing the **dehydrated** config as below.
+distros also. Then continue from the [Dehydrated Config Section](#dehydrated-config-settings) section below.
+
 ```bash
-sudo apt install ./dehydrated-hook-luadns_0.8.4-1_amd64.deb
+sudo apt install ./dehydrated-hook-luadns_0.8.8-1_amd64.deb
 ```
 
-Otherwise to install manually, download the hook script, put it somewhere, make it
-executable with:
+## Manual Installation
+
+Otherwise to install manually, download the latest source code archive from the releases page [HERE](https://github.com/zoot101/dehydrated-hook-luadns/releases) and extract it
+
 ```bash
+unzip dehydrated-hook-luadns-0.8.8.zip      # For the Zip File
+tar xvf dehydrated-hook-luadns-0.8.8.tar.gz # For the Tar File
+
+cd dehydrated-hook-luadns
+
+# Install the script by placing it in /usr/bin, alternatively
+# one can place it anywhere and just point dehydrated to it
 chmod +x dehydrated-hook-luadns
+sudo cp dehydrated-hook-luadns /usr/bin
+
+# Install the manual entry (optional)
+sudo cp manual/dehydrated-hook-luadns.1.gz /usr/share/man/man1
 ```
 
 Next install the required dependencies:
+
 ```bash
 # On Debian based distros
 sudo apt install curl bind9-dnsutils jq
@@ -60,13 +83,12 @@ Regardless of whether the sript is installed manually or via the package.
 The following is required in the main **dehydrated** config to start using the script.
 
 ```bash
+# Select the DNS-01 challenge
 CHALLENGETYPE="dns-01"
 
-# If installing via the debian package
+# Point Dehydrated to the Hook Script, change the
+# path if you placed it elsewhere 
 HOOK="/usr/bin/dehydrated-hook-luadns"
-
-# For Manual Installation
-HOOK="/path/to/dehydrated-hook-luadns"   
 
 # Enable Hook Chain (if desired)
 HOOK_CHAIN="yes"
@@ -85,11 +107,11 @@ https://github.com/dehydrated-io/dehydrated
 In the above **lua_email** is your login email for **Luadns.com** and **lua_api_key** is an
 API generated via the Luadns.com login. Note that one needs to enable API access.
 
-The HOOK_CHAIN option is supported for certificates with
+The **HOOK_CHAIN** option is supported for certificates with
 multiple alternative names. This is useful to reduce the
 number of calls to the script. It is recommeneded to enable
 this option within the dehydrated config. However the script
-will also work with HOOK_CHAIN="no"
+will also work with **HOOK_CHAIN="no"**
 
 In the above config options, **lua_email** and **lua_api_key**
 are the login email for your luadns.com account, and the
@@ -111,6 +133,7 @@ config, that should allow one to solve the DNS-01 challenge
 via **Luadns.com** with **dehydrated**!
 
 # Testing Directly
+
 The script can be tested directly by following the procedure below.
 It is recommended to ensure it works when being called on its own
 before using with **dehydrated** to issue real certificates and also
@@ -149,6 +172,7 @@ Supported are:
 3. **deploy_cert**    
 
 ### deploy\_challenge
+
 For **deploy_challenge** the following arguments are expected,
 
 ```bash
