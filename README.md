@@ -42,7 +42,9 @@ the dependencies will be installed manually.
 To install the package download the latest package from the relases page [HERE](https://github.com/zoot101/dehydrated-hook-luadns/releases)
 
 Note this has only been tested on Debian Bookworm and Trixie as of the time of writing, but it should work on other Debian based
-distros also. Then continue from the [Dehydrated Config Section](#dehydrated-config-settings) section below.
+distros also, since the dependencies are very simple.
+
+Then, continue from the [Dehydrated Config Section](#dehydrated-config-settings) section below.
 
 ```bash
 sudo apt install ./dehydrated-hook-luadns_0.8.8-1_amd64.deb
