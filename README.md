@@ -43,6 +43,7 @@ included as part of the debian package installation.
     - [deploy\_challenge](#deploy_challenge)
     - [clean\_challenge](#clean_challenge)
 - [Sample Outputs](#sample-outputs)
+- [Removing the Dependency on Dehydrated from the Package](#removing-the-dependency-on-dehydrated-from-the-package)
 - [Credits](#credits)
 
 # Usage and Installation
@@ -242,6 +243,8 @@ Shown below are some sample outputs that will be seen when being used by dehydra
 ```bash
 root : server @ ~ # dehydrated-hook-luadns deploy_challenge test1.example.com file1 token-value
  + Hook: ############################
+ + Hook: # Dehydrated-Hook-Luadns Version: 0.8.8"
+ + Hook: ############################
  + Hook: + deploy_challenge: 1 of 1
  + Hook: ############################
  + Hook: Name:_acme-challenge.test1.example.com, Type:TXT, Value:token-value
@@ -279,6 +282,8 @@ root : server @ ~ # dehydrated-hook-luadns deploy_challenge test1.example.com fi
 ```bash
 root : server @ ~ # dehydrated-hook-luadns clean_challenge test1.example.com file1 token-value
  + Hook: ############################
+ + Hook: # Dehydrated-Hook-Luadns Version: 0.8.8"
+ + Hook: ############################
  + Hook: + clean_challenge: 1 of 1
  + Hook: ############################
  + Hook: Name:_acme-challenge.test1.example.com, Type:TXT, Value:token-value
@@ -294,11 +299,48 @@ root : server @ ~ # dehydrated-hook-luadns clean_challenge test1.example.com fil
  + Hook: ############################
 ```
 
+# Removing the Dependency on Dehydrated from the Package
+
+By default if one installs the debian package, one will be prompted to install
+**dehydrated** from the official repos. The author recommends this as the **dehydrated**
+package on Debian does some nice things like setting up a config drop-in directory
+and such.
+
+However, in the case someone is using a newer version of **dehydrated** than is in
+the repos and wants to install this hook script with the package this might cause
+a problem as it might conflict with however the newer version of **dehydrated** is
+installed.
+
+Normally I would recommend you just install this script manually, but in the edge case,
+one ***still*** wants to install with the package, it can be gotten around by removing the
+dependency on **dehydrated** from the package, do to that - do the following:
+
+First download the "Source Code" archive from the Releases Page [HERE](https://github.com/zoot101/dehydrated-hook-luadns/releases) and extract it.
+
+```bash
+tar xvf dehydrated-hook-luadns-0.8.8.tar.gz  # For the tar file
+unzip dehydrated-hook-luadns-0.8.8.zip       # For the zip file
+
+cd dehydrated-hook-luadns-0.8.8
+
+# Now edit debian/control to delete the dehydrated depenedency
+nano debian/control # or whatever text edit you prefer
+
+# Delete the following line, save and close
+ dehydrated (>=0.7.0),
+
+# Then re-build the package like so
+dh_make -s --createorig # Accept the default prompts
+dpkg-buildpackage -uc -us
+```
+
+Then an updated package should be created in the parent directory.
+
 # Credits
 
 I did come across a script written back in 2017 which is still hosted here,
 written by Greg Brackley.
-https://plone.lucidsolutions.co.nz/web/pki/letsencrypt/letsencrypt-with-dehydrated-using-dns-01-on-centos-v7
+* [https://plone.lucidsolutions.co.nz/web/pki/letsencrypt/letsencrypt-with-dehydrated-using-dns-01-on-centos-v7](https://plone.lucidsolutions.co.nz/web/pki/letsencrypt/letsencrypt-with-dehydrated-using-dns-01-on-centos-v7)
 
 This script still worked but had issues especially with wildcard certificates and didn't do any check
 for propagation, but it did serve as a starting point. Thanks to him for his work on
