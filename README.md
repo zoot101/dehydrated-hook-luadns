@@ -32,6 +32,19 @@ and then hands control back to **dehydrated**.
 For more details a detailed desription is provided in the manual entry that is
 included as part of the debian package installation.
 
+# Contents
+
+- [Usage and Installation](#usage-and-installation)
+  - [Package Installation](#package-installation)
+  - [Manual Installation](#manual-installation)
+- [Dehydrated Config Settings](#dehydrated-config-settings)
+- [Testing Directly](#testing-directly)
+  - [Action](#action)
+    - [deploy\_challenge](#deploy_challenge)
+    - [clean\_challenge](#clean_challenge)
+- [Sample Outputs](#sample-outputs)
+- [Credits](#credits)
+
 # Usage and Installation
 
 If running Debian or one of its derivaties its recommended to install the package so all of
