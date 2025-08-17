@@ -259,19 +259,19 @@ root : server @ ~ # dehydrated-hook-luadns deploy_challenge test1.example.com fi
  + Hook: Querying all 4 example.com Nameservers for Record...
  + Hook: --> Nameserver 1/4: ns1.luadns.net.
  + Hook: ----> Waiting 2 seconds
- + Hook: ----> Querying for record - Try: 1/5
+ + Hook: ----> Querying for record - Try: 1/11
  + Hook: ----> Record live
  + Hook: --> Nameserver 2/4: ns2.luadns.net.
  + Hook: ----> Waiting 2 seconds
- + Hook: ----> Querying for record - Try: 1/5
+ + Hook: ----> Querying for record - Try: 1/11
  + Hook: ----> Record live
  + Hook: --> Nameserver 3/4: ns3.luadns.net.
  + Hook: ----> Waiting 2 seconds
- + Hook: ----> Querying for record - Try: 1/5
+ + Hook: ----> Querying for record - Try: 1/11
  + Hook: ----> Record live
  + Hook: --> Nameserver 4/4: ns4.luadns.net.
  + Hook: ----> Waiting 2 seconds
- + Hook: ----> Querying for record - Try: 1/5
+ + Hook: ----> Querying for record - Try: 1/11
  + Hook: ----> Record live
  + Hook: --> Record successfully deployed and live
  + Hook: ############################
