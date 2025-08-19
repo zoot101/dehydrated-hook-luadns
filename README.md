@@ -39,7 +39,7 @@ included as part of the debian package installation.
   - [Manual Installation](#manual-installation)
 - [Dehydrated Config Settings](#dehydrated-config-settings)
 - [Testing Directly](#testing-directly)
-  - [Supported Actions](#action)
+  - [Supported Actions](#supported-actions)
     - [deploy\_challenge](#deploy_challenge)
     - [clean\_challenge](#clean_challenge)
     - [deploy\_cert](#deploy_cert)
