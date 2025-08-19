@@ -9,7 +9,7 @@
 #
 
 # Version Number
-version="0.8.8"
+version="1.0.0"
 
 ###############################
 # VARIABLES
@@ -62,7 +62,7 @@ query_nameserver() {
 
 # Base Curl Command as per the Luadns.com REST API documentation
 curl_cmd() {
-  curl --retry 3 --silent --show-error -u ${lua_email}:${lua_api_key} \
+  curl --retry 3 --silent --show-error -u "${lua_email}:${lua_api_key}" \
   -H 'Accept: application/json' "$@"
 }
 
@@ -98,6 +98,18 @@ check_dependencies() {
     log1 "ERROR: jq is not installed - Exiting"
     exit 1
   fi 
+}
+
+# Check if the Record passed from dehydrated is a CNAME. If so use that instead.
+# This allows for the case where the user wants to use a different domain for certificate
+# validation and issue.
+check_for_cname() {
+  local fqdn="${1}"
+  if [ -n "${fqdn}" ]; then cname_check=$(dig +short CNAME "${fqdn}"); fi
+  if [ -n "${cname_check}" ]; then
+    log1 "CNAME Found: ${cname_check} - Proceeding with that instead"
+    record_name="${cname_check}"
+  fi
 }
 
 # Break the fqdn apart to isolate the zone name (example.tld)
@@ -173,7 +185,7 @@ luadns_get_zone_id() {
 
   # Sanity Check that the zone_name given is not empty.
   if [ -z "${luadns_zone_name}" ]; then
-    log2 "ERROR: (Zone Name is empty)"
+    log2 "ERROR: Zone Name is empty"
     exit 1
   fi
 
@@ -184,7 +196,7 @@ luadns_get_zone_id() {
   # Parse Response with jq command to pick out the Zone ID & Check if it's a number
   zone_id=$(echo "${response}" | jq ".[] | select(.name==\"${luadns_zone_name}\").id") 
   if ! is_number "${zone_id}"; then
-    log2 "ERROR: Zone ID could not be obtained"
+    log2 "ERROR: Zone ID could not be obtained - Problem with API Key?"
     exit 1
   fi
 }
@@ -236,7 +248,7 @@ luadns_get_record_id() {
   # (Can't use number check here as in certain edge cases multiple IDs are received...)
   record_id=$(echo "${response}" | jq ".[] | select(.name==\"${luadns_record_name}\" and .type==\"TXT\" and .content==\"${luadns_record_content}\").id")
   if [ -z "${record_id}" ]; then
-    log2 "ERROR: Record ID could not be obtained"
+    log2 "ERROR: Record ID could not be obtained - Does the record exist?"
     exit 1
   fi
 }
@@ -337,9 +349,12 @@ deploy_single_challenge() {
   local record_name="${prefix}"$domain
   log1 "Name:${record_name}, Type:TXT, Value:${token_value}"
  
+  # Check if the Record is a CNAME, if so use what the CNAME points to instead
+  check_for_cname "${record_name}"
+
   # Extract the Root Domain to allow getting the Zone ID
-  get_zone_name_from_fqdn $domain
-  log1 "Zone Name -" "${zone_name}"
+  get_zone_name_from_fqdn "${record_name}"
+  log1 "Zone Name:" "${zone_name}"
 
   # Now Query the Luadns nameservers for the actual NS records
   get_zone_nameservers "${zone_name}"
@@ -348,7 +363,7 @@ deploy_single_challenge() {
   # Get Zone ID From LuaDNS API...
   log2 "Getting Zone ID..."
   luadns_get_zone_id ${zone_name}
-  log2 "Zone ID -" $zone_id
+  log2 "Zone ID:" $zone_id
 
   # Create Record using LuaDNS API (Type TXT) & Wait for Publication
   luadns_create_new_record "${zone_id}" "${record_name}" "TXT" "${token_value}"
@@ -363,22 +378,25 @@ clean_single_challenge() {
   local record_name="${prefix}"$domain
   log1 "Name:${record_name}, Type:TXT, Value:${token_value}"  
 
+  # Check if the Record is a CNAME, if so use what the CNAME points to instead
+  check_for_cname "${record_name}"
+
   # Extract the Root Domain to allow getting the Zone ID
-  get_zone_name_from_fqdn $domain
-  log1 "Zone Name -" "${zone_name}"
+  get_zone_name_from_fqdn "${record_name}"
+  log1 "Zone Name:" "${zone_name}"
   log1 "Deleting record via" "${lua_api_url}""..."
 
   # Get the Zone ID From LuaDNS API...
   log2 "Getting Zone ID..."
   luadns_get_zone_id ${zone_name}
-  log2 "Zone ID -" $zone_id
+  log2 "Zone ID:" $zone_id
 
   # Now use the zone id to get the record id
   log2 "Getting Record ID..."
   luadns_get_record_id ${zone_id} ${record_name} "${token_value}"
 
   # Print the 1st Record ID found and delete the record
-  log2 "Record ID -" $(echo "${record_id}" | sed -n 1p)
+  log2 "Record ID:" $(echo "${record_id}" | sed -n 1p)
   luadns_delete_record "${zone_id}" "${record_id}" 
 }
 
