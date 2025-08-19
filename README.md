@@ -26,8 +26,9 @@ but should work on any distro with the below dependencies installed.
 * sed   
 
 The script takes in a domain that a certificate is being requested for from **dehydrated**,
-appends "\_acme-challenge." to the start, deploys it to the Luadns REST API, checks for propagation,
-and then hands control back to **dehydrated**.
+appends "\_acme-challenge." to the start, deploys it to the Luadns REST API as a TXT record
+with what was given by **dehyrated**, checks for propagation by querying the Luadns nameservers
+to see if the record just deployed is live, and then hands control back to **dehydrated**.
 
 For more details a detailed desription is provided in the manual entry that is
 included as part of the debian package installation.
@@ -38,6 +39,7 @@ included as part of the debian package installation.
   - [Package Installation](#package-installation)
   - [Manual Installation](#manual-installation)
 - [Dehydrated Config Settings](#dehydrated-config-settings)
+- [Using an Alternative Domain for Certificate Issue](#using-an-alternative-domain-for-certificate-issue)
 - [Testing Directly](#testing-directly)
   - [Supported Actions](#supported-actions)
     - [deploy\_challenge](#deploy_challenge)
@@ -45,33 +47,38 @@ included as part of the debian package installation.
     - [deploy\_cert](#deploy_cert)
 - [Sample Outputs](#sample-outputs)
 - [Removing the Dependency on Dehydrated from the Package](#removing-the-dependency-on-dehydrated-from-the-package)
+- [Links](#links)
+  - [Luadns Rest API and Documentation](#luadns-rest-api-and-documentation)
+  - [Dehydrated Documentation](#dehydrated-documentation)
 - [Credits](#credits)
 
 # Usage and Installation
 
 If running Debian or one of its derivaties its recommended to install the package so all of
-the dependencies will be installed manually.
+the dependencies (including **dehydrated** itself) will be installed automatically.
 
 ## Package Installation
 
-To install the package download the latest package from the relases page [HERE](https://github.com/zoot101/dehydrated-hook-luadns/releases)
+To install the package, first download the latest package from the relases page [HERE](https://github.com/zoot101/dehydrated-hook-luadns/releases)
 
 Note this has only been tested on Debian Bookworm and Trixie as of the time of writing, but it should work on other Debian based
 distros also, since the dependencies are very simple.
 
-Then, continue from the [Dehydrated Config Section](#dehydrated-config-settings) section below.
+Install the package like so. It's better to use **apt** instead of **dpkg** so the dependencies are installed automatically.
 
 ```bash
-sudo apt install ./dehydrated-hook-luadns_0.8.8-1_amd64.deb
+sudo apt install ./dehydrated-hook-luadns_1.0.0-1_amd64.deb
 ```
+
+Then, continue from the [Dehydrated Config Section](#dehydrated-config-settings) section below.
 
 ## Manual Installation
 
 Otherwise to install manually, download the latest source code archive from the releases page [HERE](https://github.com/zoot101/dehydrated-hook-luadns/releases) and extract it
 
 ```bash
-unzip dehydrated-hook-luadns-0.8.8.zip      # For the Zip File
-tar xvf dehydrated-hook-luadns-0.8.8.tar.gz # For the Tar File
+unzip dehydrated-hook-luadns-1.0.0.zip      # For the Zip File
+tar xvf dehydrated-hook-luadns-1.0.0.tar.gz # For the Tar File
 
 cd dehydrated-hook-luadns
 
@@ -95,12 +102,14 @@ sudo dnf install curl bind-utils jq
 ```
 
 Note if using [IPFire](https://ipfire.org), the above dependencies are included by
-default, so no other action should be required other than downloading the script.
+default, so no other action should be required other than downloading the script. There is
+also no need to install the manual entry as the **man** command is not included in 
+[IPFire](https://ipfire.org) by default.
 
 # Dehydrated Config Settings
 
-Regardless of whether the sript is installed manually or via the package.
-The following is required in the main **dehydrated** config to start using the script.
+Regardless of whether the script is installed manually or via the package, the following
+is required in the main **dehydrated** config to start using the script.
 
 ```bash
 # Select the DNS-01 challenge
@@ -122,23 +131,18 @@ export automatic_nginx_reload="yes"
 The **CHALLENGETYPE, HOOK**, and **HOOK_CHAIN** options are all
 covered in the wider dehydrated documentation and are not
 considered here.
-https://github.com/dehydrated-io/dehydrated
 
-In the above **lua_email** is your login email for **Luadns.com** and **lua_api_key** is an
-API generated via the Luadns.com login. Note that one needs to enable API access.
+* [https://github.com/dehydrated-io/dehydrated](https://github.com/dehydrated-io/dehydrated)
+
+In the above example config, **lua_email** is your login email for **Luadns.com** and **lua_api_key** is an
+API generated via the Luadns.com WebUI that has access to the Domain (or DNS Zone) you wish to issue certificates
+for. Note that one needs to enable API access.
 
 The **HOOK_CHAIN** option is supported for certificates with
 multiple alternative names. This is useful to reduce the
 number of calls to the script. It is recommeneded to enable
 this option within the dehydrated config. However the script
 will also work with **HOOK_CHAIN="no"**
-
-In the above config options, **lua_email** and **lua_api_key**
-are the login email for your luadns.com account, and the
-**lua_api_key** is an api key that you can generate via
-their WebUI that has access to the DNS Zone where you want
-to deploy the TXT Record. See the section below on creating
-the API key.
 
 The **automatic_nginx_reload** parameter is optional above.
 It is intended to automatically reload an nginx webserver
@@ -151,6 +155,47 @@ by using the **-k** or **\--hook** options. See the dehydrated documentation.
 After the above lines are deployed in the wider dehydrated
 config, that should allow one to solve the DNS-01 challenge
 via **Luadns.com** with **dehydrated**!
+
+# Using an Alternative Domain for Certificate Issue
+
+The script supports using an alternative domain for certificate issue using a CNAME
+record. To illustrate this, lets take an example.
+
+Say one is seeking a certificate for highly critical domain (critial-example.org). In
+this case one may not want to store an API key on the Webserver that has full access
+to this domain. If the Webserver is compromised, then the domain should be taken
+to be compromised also. If this is a critically important domain with lots of users and
+possibly revenue dependent on it, then this could be an unacceptable security risk.
+
+However, there is a way around this and **LetsEncrypt** or other free SSL certificate
+providers accept this method also.
+
+That is, to use a completely seperate and less important domain for the issue of
+certificates instead. Expanding the example, lets say the less important domain is 
+**non-critical-example.org**.
+
+* Taking the example above - **critical-example.org**, let us say that one wants a certficate for
+  **record1.critical.example.org**.   
+* Then one can create a CNAME record (\_acme-challenge.record1.critical-example.org) at the DNS
+  provider for **critical-example.org**  that points to **certificate-issue.non-critical-example.org**.    
+* This way, the deployment of the TXT record for certificate issue can instead be
+  done on **non-critical-example.org** instead of **critical-example.org**.    
+* This gives the system admin some peace of mind to know that if the Webserver gets 
+  compromised, only **non-critical-example.org** is at risk instead, as an API key can
+  created and stored on the Webserver for that instead of **critical-example.org**.    
+
+This gives additional flexibility as the critical domain does not require its DNS records
+to be hosted at **Luadns.com**, they could instead be hosted elsewhere. All that is required
+is that an appropriate CNAME record be created under the critically important domain.
+
+Needless to say the non critical domain for use with this script must have its DNS hosted at Luadns.com.
+
+This hook script has been written to account for this situation. It does a check up front
+on any records to deploy or clean that it receives from **dehydrated** if they resolve as
+CNAME records before being deployed or cleaned (removed).
+
+If it finds a CNAME record, it will proceed to communicate with the Luadns.com REST API for
+what the CNAME points to instead.
 
 # Testing Directly
 
@@ -249,18 +294,18 @@ Shown below are some sample outputs that will be seen when being used by dehydra
 ```bash
 root : server @ ~ # dehydrated-hook-luadns deploy_challenge test1.example.com file1 token-value
  + Hook: ############################
- + Hook: # Dehydrated-Hook-Luadns Version: 0.8.8"
+ + Hook: # Dehydrated-Hook-Luadns Version: 1.0.0"
  + Hook: ############################
  + Hook: + deploy_challenge: 1 of 1
  + Hook: ############################
  + Hook: Name:_acme-challenge.test1.example.com, Type:TXT, Value:token-value
- + Hook: Zone Name - example.com
+ + Hook: Zone Name: example.com
  + Hook: Querying Luadns Nameservers for example.com NS Records...
  + Hook: --> Querying Nameserver 1/4: ns1.luadns.net
  + Hook: ----> Success: Obtained 4 NS records for example.com
  + Hook: Deploying record via https://api.luadns.com/v1...
  + Hook: --> Getting Zone ID...
- + Hook: --> Zone ID - 9090
+ + Hook: --> Zone ID: 1234
  + Hook: --> Record successfully deployed.
  + Hook: Querying all 4 example.com Nameservers for Record...
  + Hook: --> Nameserver 1/4: ns1.luadns.net.
@@ -288,17 +333,17 @@ root : server @ ~ # dehydrated-hook-luadns deploy_challenge test1.example.com fi
 ```bash
 root : server @ ~ # dehydrated-hook-luadns clean_challenge test1.example.com file1 token-value
  + Hook: ############################
- + Hook: # Dehydrated-Hook-Luadns Version: 0.8.8"
+ + Hook: # Dehydrated-Hook-Luadns Version: 1.0.0"
  + Hook: ############################
  + Hook: + clean_challenge: 1 of 1
  + Hook: ############################
  + Hook: Name:_acme-challenge.test1.example.com, Type:TXT, Value:token-value
- + Hook: Zone Name - example.com
+ + Hook: Zone Name: example.com
  + Hook: Deleting record via https://api.luadns.com/v1...
  + Hook: --> Getting Zone ID...
- + Hook: --> Zone ID - 9090
+ + Hook: --> Zone ID: 1234
  + Hook: --> Getting Record ID...
- + Hook: --> Record ID - 12345
+ + Hook: --> Record ID: 12345
  + Hook: --> Record: 12345 Successfully Deleted
  + Hook: ############################
  + Hook: + SUCCESS: All Challenges cleaned
@@ -324,10 +369,10 @@ dependency on **dehydrated** from the package, do to that - do the following:
 First download the "Source Code" archive from the Releases Page [HERE](https://github.com/zoot101/dehydrated-hook-luadns/releases) and extract it.
 
 ```bash
-tar xvf dehydrated-hook-luadns-0.8.8.tar.gz  # For the tar file
-unzip dehydrated-hook-luadns-0.8.8.zip       # For the zip file
+tar xvf dehydrated-hook-luadns-1.0.0.tar.gz  # For the tar file
+unzip dehydrated-hook-luadns-1.0.0.zip       # For the zip file
 
-cd dehydrated-hook-luadns-0.8.8
+cd dehydrated-hook-luadns-1.0.0
 
 # Now edit debian/control to delete the dehydrated depenedency
 nano debian/control # or whatever text edit you prefer
@@ -342,6 +387,20 @@ dpkg-buildpackage -uc -us
 
 Then an updated package should be created in the parent directory.
 
+# Links
+
+## Luadns Rest API and Documentation
+
+* [https://api.luadns.com/v1](https://api.luadns.com/v1)   
+* [https://www.luadns.com/api.html](https://www.luadns.com/api.html)
+
+## Dehydrated Documentation
+
+* [https://github.com/dehydrated-io/dehydrated](https://github.com/dehydrated-io/dehydrated)    
+* [https://github.com/dehydrated-io/dehydrated/blob/master/docs/dns-verification.md](https://github.com/dehydrated-io/dehydrated/blob/master/docs/dns-verification.md)    
+* [https://github.com/dehydrated-io/dehydrated/blob/master/docs/hook\_chain.md](https://github.com/dehydrated-io/dehydrated/blob/master/docs/hook_chain.md)   
+* [https://github.com/dehydrated-io/dehydrated/blob/master/docs/examples/hook.sh](https://github.com/dehydrated-io/dehydrated/blob/master/docs/examples/hook.sh)    
+
 # Credits
 
 I came across a similar script written back in 2017 by Greg Brackley for use with [Luadns.com](https://luadns.com),
@@ -352,4 +411,5 @@ wildcard certificates and did not do any check for propagation. Although the abo
 entirely the author's work, this script did serve as a starting point - Many thanks to him.
 
 And also many thanks to lukas2511 for [Dehydrated](https://github.com/dehydrated-io/dehydrated) itself!
+
 
