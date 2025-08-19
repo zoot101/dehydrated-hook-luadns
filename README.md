@@ -15,7 +15,7 @@ the author to create this hook script.
 
 It has worked very well for the author to date, so hopefully it will be of use to someone else!
 
-It has only been tested on Debian Bookworm and Trixie at the time of writing
+It has been tested on Debian Bookworm and Trixie, and also [IPFire](https://ipfire.org) at the time of writing
 but should work on any distro with the below dependencies installed.
 
 * curl   
@@ -39,9 +39,10 @@ included as part of the debian package installation.
   - [Manual Installation](#manual-installation)
 - [Dehydrated Config Settings](#dehydrated-config-settings)
 - [Testing Directly](#testing-directly)
-  - [Action](#action)
+  - [Supported Actions](#action)
     - [deploy\_challenge](#deploy_challenge)
     - [clean\_challenge](#clean_challenge)
+    - [deploy\_cert](#deploy_cert)
 - [Sample Outputs](#sample-outputs)
 - [Removing the Dependency on Dehydrated from the Package](#removing-the-dependency-on-dehydrated-from-the-package)
 - [Credits](#credits)
@@ -92,6 +93,9 @@ sudo apt install curl bind9-dnsutils jq
 # On Fedora
 sudo dnf install curl bind-utils jq
 ```
+
+Note if using [IPFire](https://ipfire.org), the above dependencies are included by
+default, so no other action should be required other than downloading the script.
 
 # Dehydrated Config Settings
 
@@ -179,7 +183,7 @@ Then follow the below:
 
 USAGE: **dehydrated-hook-luadns \[ACTION\]  \[ARGUMENTS\]**
 
-## Action
+## Supported Actions
 
 Supported are:
 
@@ -207,6 +211,7 @@ dehydrated-hook-luadns deploy_challenge fqdn1 token1 txt-token1 fqdn2 token2 txt
 ```
 
 ### clean\_challenge
+
 For **clean_challenge**, the same arguments as **deploy_challenge**
 are expected:
 
@@ -222,6 +227,7 @@ dehydrated-hook-luadns clean_challenge fqdn1 token1 txt-token1 fqdn2 token2 txt-
 ```
 
 ### deploy\_cert
+
 If **deploy_cert** is used as an **ACTION**, in this case
 all input arguments are ignored.
 
@@ -338,14 +344,12 @@ Then an updated package should be created in the parent directory.
 
 # Credits
 
-I did come across a script written back in 2017 which is still hosted here,
-written by Greg Brackley.
-* [https://plone.lucidsolutions.co.nz/web/pki/letsencrypt/letsencrypt-with-dehydrated-using-dns-01-on-centos-v7](https://plone.lucidsolutions.co.nz/web/pki/letsencrypt/letsencrypt-with-dehydrated-using-dns-01-on-centos-v7)
+I came across a similar script written back in 2017 by Greg Brackley for use with [Luadns.com](https://luadns.com),
+which is still hosted and available for download [HERE](https://plone.lucidsolutions.co.nz/web/pki/letsencrypt/letsencrypt-with-dehydrated-using-dns-01-on-centos-v7).
 
-This script still worked but had issues especially with wildcard certificates and didn't do any check
-for propagation, but it did serve as a starting point. Thanks to him for his work on
-that script.
+This script worked well for simple certificates with no alternative names, but had issues with
+wildcard certificates and did not do any check for propagation. Although the above script is
+entirely the author's work, this script did serve as a starting point - Many thanks to him.
 
-And also many thanks to lukas2511 for **dehydrated** itself!
-
+And also many thanks to lukas2511 for [Dehydrated](https://github.com/dehydrated-io/dehydrated) itself!
 
