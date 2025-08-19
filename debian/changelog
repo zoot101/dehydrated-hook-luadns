@@ -1,3 +1,28 @@
+dehydrated-hook-luadns (1.0.0-1) stable; urgency=medium
+
+  * Added ability to use an alternative domain for certificate issue
+    through the use of a CNAME record.
+    - For example: A certificate is desired for record1.domain1.org,
+      if _acme-challenge.record1.domain1.org is set up as a CNAME
+      pointing to record2.domain2.org, certificate issue can be done
+      with that domain2.org instead.
+    - The script will now check up front for a CNAME and proceed
+      with what the CNAME record points to instead - see README or
+      manual entry.
+
+  * Updates to manual entry and Readme.
+    - Showcase an example for the use of the CNAME record.
+    - Added links to relevant documentation hosted elsewhere.
+    - Corrected some typos.
+
+  * Made Error messages upon obtaining Zone ID and Record ID 
+    more helpful.
+
+  * Updated version to 1.0.0 as all features planned (for now!) have
+    now been included.
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Tue, 19 Aug 2025 12:42:17 +0100
+
 dehydrated-hook-luadns (0.8.8-1) stable; urgency=medium
 
   * Increased number of retries to 11 when querying nameservers
