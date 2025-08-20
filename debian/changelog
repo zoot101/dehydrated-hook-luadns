@@ -1,3 +1,41 @@
+dehydrated-hook-luadns (1.0.1-1) stable; urgency=medium
+
+  * Removed automatic_nginx_reload parameter in favor of two new
+    config parameters - deploy_cert_command and deploy_cert_script
+    - Closes #5.
+
+  * New Config Parameter - deploy_cert_command
+    - This allows the user to specify any arbitrary command that is called
+      when the hook script is called with the deploy_cert argument.
+    - This gives much more flexibilty to reload any webservers using the
+      new certificates, as previously only reloading nginx via systemd was
+      possible.
+    - It also doesn't have to reload a webserver, it could be any command
+      the user desires.
+
+  * New Config Parameter - deploy_cert_script
+    - This allows the user to call a custom script when a new certificate
+      is created by dehydrated if they have something unique they wish
+      to be carried out at this point.
+    - It passes in all of the arguments given by dehydrated to the 
+      script when it is called with the deploy_cert option here:
+      https://github.com/dehydrated-io/dehydrated/blob/master/docs/examples/hook.sh
+    - As an example, if the user has an alternative location for the
+      certificates that their webserver uses to dehydrates output
+      directory, the may wish to copy them to a new location and then
+      reload the webserver.
+    - This can also be any custom script - python, perl, bash or otherwise.
+
+  * Note - If one was previously using the automatic_nginx_reload parameter,
+    then updating the dehydrated config is required.
+
+  * Updates to README and man page.
+
+  * Fixed issue where the propagation check would fail if the TXT
+    record content started with "-" or "--". Closes #4
+
+ -- Mark Finnan <mfinnan101@gmail.com>  Wed, 20 Aug 2025 15:16:41 +0100
+
 dehydrated-hook-luadns (1.0.0-1) stable; urgency=medium
 
   * Added ability to use an alternative domain for certificate issue
