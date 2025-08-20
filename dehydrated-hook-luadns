@@ -1,15 +1,12 @@
 #!/usr/bin/env bash
 ###############################
-# DEHYDRATED HOOK SCRIPT FOR LUADNS.COM
+# Dehydrated Hook Script for Luadns.com
 ###############################
 # Github Page: https://github.com/zoot101/dehydrated-hook-luadns
 ###############################
-#
-# Script Dependencies are: awk, dig, grep, jq, curl
-#
 
 # Version Number
-version="1.0.0"
+version="1.0.1"
 
 ###############################
 # VARIABLES
@@ -52,7 +49,7 @@ query_zone_ns_records() {
   dig +short +retry=3 @"${auth_nameserver}" NS "${fqdn}"
 }
 
-# Query Auth Nameserver for TXT Record Deployed using dig
+# Query Auth Nameserver for TXT Record Deployed using dig - Added escaped " to Close #3
 query_nameserver() {
   local auth_server="${1}"
   local name="${2}"
@@ -133,8 +130,6 @@ get_zone_name_from_fqdn() {
 
 # Get NS Records for Zone (Root of the domain passed in)
 get_zone_nameservers() { 
-
-  # Zone Name
   local zone="${1}"
 
   # Number of starting nameservers
@@ -294,14 +289,13 @@ wait_for_record_to_propagate() {
   local j=1
   log1 "Querying all" $N_zone_ns_records "${zone_name}" "Nameservers for Record..."
 
-  # Loop through each of the Zone NS Records to Query each of them
+  # Loop through each of the Zone NS Records to Query each of them up to
+  # a maximum of 11 trys
   for j in $(seq 1 1 $N_zone_ns_records); do
     local nameserver=$(echo "${zone_ns_records}" | sed -n "$j"p)
     log2 "Nameserver" $j"/"$N_zone_ns_records":" "${nameserver}" 
-  
-    # Try up to a maximum of $retries..
+
     for i in $(seq 1 1 $retries); do
-  
       # Wait delay_time^i seconds so the wait time doubles each try...
       wait_time=$(($delay_time**$i))
       log3 "Waiting" $wait_time "seconds"
@@ -386,12 +380,10 @@ clean_single_challenge() {
   log1 "Zone Name:" "${zone_name}"
   log1 "Deleting record via" "${lua_api_url}""..."
 
-  # Get the Zone ID From LuaDNS API...
+  # Get the Zone ID & then the Record ID From the LuaDNS API
   log2 "Getting Zone ID..."
   luadns_get_zone_id ${zone_name}
   log2 "Zone ID:" $zone_id
-
-  # Now use the zone id to get the record id
   log2 "Getting Record ID..."
   luadns_get_record_id ${zone_id} ${record_name} "${token_value}"
 
@@ -402,8 +394,6 @@ clean_single_challenge() {
 
 # Main Deploy Challenge Function
 deploy_challenge() {
-
-  # Check depedencies and Credentials
   check_dependencies
   luadns_credentials_check
 
@@ -434,8 +424,6 @@ deploy_challenge() {
 
 # Main Clean Challenge Function
 clean_challenge() {
-
-  # Check dependencies and Credentials
   check_dependencies
   luadns_credentials_check
 
@@ -444,11 +432,9 @@ clean_challenge() {
   check_div_by_3 "$@"
   local challenges_number=$(( args_number / 3 ))
 
-  # Print Greeting Banner
+  # Print Greeting Banner & Loop Through the Inputs in Groups of 3
   log1 "############################"
   log1 "# Dehydrated-Hook-Luadns Version: ${version}"
-
-  # Now Loop Through the Input Parameters in groups of 3
   index_c=1
   while (( ${#} )); do
     log1 "############################"
@@ -466,24 +452,36 @@ clean_challenge() {
 
 # Main Deploy Cert Function
 deploy_cert() {
-
-  # Reload nginx if the following is included in the dehydrated config
-  if [ ! -z "${automatic_nginx_reload}" ]
-  then
-    if [ "${automatic_nginx_reload}" == "yes" ]; then
-      log1 "Reloading nginx..."
-      # Reload nginx via systemctl but prevent the script throwing an error
-      systemctl reload nginx || log2 "Problem reloading nginx..."
-      exit 0
+  # Execute deploy_cert_command if specified
+  if [ -n "${deploy_cert_command}" ]; then
+    log1 "Issuing command: ${deploy_cert_command}"
+    if bash -c "${deploy_cert_command}"; then
+      log2 "Success"
+    else
+      log2 "WARNING: Command return status indicates an error"
     fi
   fi
+
+  # Call deploy_cert_script if Specified and pass in all arguments given by dehydrated
+  if [ -n "${deploy_cert_script}" ]; then
+    if [ -x "${deploy_cert_script}" ]; then
+      log1 "Calling Script: ${deploy_cert_script}"
+      if "${deploy_cert_script}" "$@"; then
+        log2 "Success"
+      else
+        log2 "WARNING: Script return status indicates an error"
+      fi
+    else
+      log1 "Not Calling Script: ${deploy_cert_script} as it either does not exist or is not executable"
+    fi
+  fi
+  exit 0
 }
 
 ###############################
 # SCRIPT START
 ###############################
-# Valid Arguments for the Script are "deploy_challenge", "clean_challenge" and
-# "deploy_cert" only. Exit cleanly for all other unrecognised arguments
+# Valid Arguments: "deploy_challenge", "clean_challenge" and "deploy_cert"
 HANDLER="$1"; shift
 if [[ "${HANDLER}" =~ ^(deploy_challenge|clean_challenge|deploy_cert)$ ]]; then
   "$HANDLER" "$@"
