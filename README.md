@@ -39,6 +39,8 @@ included as part of the debian package installation.
   - [Package Installation](#package-installation)
   - [Manual Installation](#manual-installation)
 - [Dehydrated Config Settings](#dehydrated-config-settings)
+  - [deploy\_cert\_command](#deploy_cert_command)
+  - [deploy\_cert\_script](#deploy_cert_script)
 - [Using an Alternative Domain for Certificate Issue](#using-an-alternative-domain-for-certificate-issue)
 - [Testing Directly](#testing-directly)
   - [Supported Actions](#supported-actions)
@@ -67,7 +69,7 @@ distros also, since the dependencies are very simple.
 Install the package like so. It's better to use **apt** instead of **dpkg** so the dependencies are installed automatically.
 
 ```bash
-sudo apt install ./dehydrated-hook-luadns_1.0.0-1_amd64.deb
+sudo apt install ./dehydrated-hook-luadns_1.0.1-1_amd64.deb
 ```
 
 Then, continue from the [Dehydrated Config Section](#dehydrated-config-settings) section below.
@@ -77,8 +79,8 @@ Then, continue from the [Dehydrated Config Section](#dehydrated-config-settings)
 Otherwise to install manually, download the latest source code archive from the releases page [HERE](https://github.com/zoot101/dehydrated-hook-luadns/releases) and extract it
 
 ```bash
-unzip dehydrated-hook-luadns-1.0.0.zip      # For the Zip File
-tar xvf dehydrated-hook-luadns-1.0.0.tar.gz # For the Tar File
+unzip dehydrated-hook-luadns-1.0.1.zip      # For the Zip File
+tar xvf dehydrated-hook-luadns-1.0.1.tar.gz # For the Tar File
 
 cd dehydrated-hook-luadns
 
@@ -119,13 +121,22 @@ CHALLENGETYPE="dns-01"
 # path if you placed it elsewhere 
 HOOK="/usr/bin/dehydrated-hook-luadns"
 
-# Enable Hook Chain (if desired)
+# Enable Hook Chain (Recommended)
 HOOK_CHAIN="yes"
 
-# Dehydrated Hook (Luadns) Requirements
+################################
+# Dehydrated Hook - Luadns.com Parameters
+################################
+# Luadns.com Credentials
 export lua_email="email@example.com"
 export lua_api_key="124...abc....uidlsj"  
-export automatic_nginx_reload="yes" 
+
+# Issue a Custom Command if a new Certificate is Deployed (Optional)
+export deploy_cert_command="systemctl reload nginx"
+
+# Call a Custom Script if a new Certificate is Deployed (Optional)
+# (Must be executable)
+export deploy_cert_script="/path/to/script/here" 
 ```
 
 The **CHALLENGETYPE, HOOK**, and **HOOK_CHAIN** options are all
@@ -144,10 +155,38 @@ number of calls to the script. It is recommeneded to enable
 this option within the dehydrated config. However the script
 will also work with **HOOK_CHAIN="no"**
 
-The **automatic_nginx_reload** parameter is optional above.
-It is intended to automatically reload an nginx webserver
-after new certificates are issued if one is running nginx.
-It can be omitted or left commented out if the user desires.
+## deploy\_cert\_command
+
+The **deploy_cert_command** parameter is optional above. If specified the
+script will execute this command when the script is called by **dehydrated**
+with the **deploy_cert** argument which is done for each new certificate
+**dehydrated** creates.
+
+As per the **dehydrated** hook example [HERE](https://github.com/dehydrated-io/dehydrated/blob/master/docs/examples/hook.sh), this is
+intended to allow the user to reload a webserver using any new certificates created by **dehydrated**. But it
+also can be any custom command the user desires. Comment out or omit if not using.
+
+Some examples could be:
+
+* export deploy\_cert\_command="systemctl reload nginx"   
+* export deploy\_cert\_command="/etc/init.d/apache restart"
+
+## deploy\_cert\_script
+
+The **deploy_cert_script** parameter is also optional. This allows the user to
+get the hook script to call a further custom script of their own. This differs from the
+**deploy_cert_command** parameter in that it calls the script and passes in all
+of the arguments given by **dehydrated** for the **deploy_cert** function detailed [HERE](https://github.com/dehydrated-io/dehydrated/blob/master/docs/examples/hook.sh).
+Must be executable.
+
+This could be used for example to copy the new certificate(s) created by **dehydrated** to
+a new location and reload the webserver using then. It also could be used to convert the
+certificates to a different format if desired. It doesn't have to be a bash script,
+python, perl, an executable or anything that can be called from the command line should be OK.
+
+If you wish to get the hook script to reload your webserver, the **deploy_cert_command** is what
+to use. If you want to do something more like copy the certificates to a new location or
+something, then use the **deploy_cert_script** option. Both can also be used if desired.
 
 Note the script can also be passed to **dehydrated** directly
 by using the **-k** or **\--hook** options. See the dehydrated documentation.
@@ -273,19 +312,18 @@ dehydrated-hook-luadns clean_challenge fqdn1 token1 txt-token1 fqdn2 token2 txt-
 
 ### deploy\_cert
 
-If **deploy_cert** is used as an **ACTION**, in this case
-all input arguments are ignored.
+If **deploy_cert** is used as an **ACTION**, in this case the script will
+issue the **deploy_cert_command** if specified, and also call the **deploy_cert_script**
+if specified and pass in all of the arguments given by **dehyrated** [HERE](https://github.com/dehydrated-io/dehydrated/blob/master/docs/examples/hook.sh)
 
 ```bash
+# To test the deploy_cert_command, call the script directly like so:
 dehydrated-hook-luadns deploy_cert
+
+# To test the deploy_cert_script, call the script and specify the
+# arguments like below
+dehydrated-hook-luadns deploy_cert "domain" "keyfile" "certfile" "fullchainfile" "chainfile" "timestamp"
 ```
-
-If one is using **nginx**, this can be used to execute a reload of
-nginx. This requires the parameter in the dehydrated config
-**automatic_nginx_reload="yes"**
-
-Set it to **\"no\"**, comment it out, or omit it in the dehydrated
-config to disable.
 
 # Sample Outputs
 
@@ -294,7 +332,7 @@ Shown below are some sample outputs that will be seen when being used by dehydra
 ```bash
 root : server @ ~ # dehydrated-hook-luadns deploy_challenge test1.example.com file1 token-value
  + Hook: ############################
- + Hook: # Dehydrated-Hook-Luadns Version: 1.0.0"
+ + Hook: # Dehydrated-Hook-Luadns Version: 1.0.1"
  + Hook: ############################
  + Hook: + deploy_challenge: 1 of 1
  + Hook: ############################
@@ -333,7 +371,7 @@ root : server @ ~ # dehydrated-hook-luadns deploy_challenge test1.example.com fi
 ```bash
 root : server @ ~ # dehydrated-hook-luadns clean_challenge test1.example.com file1 token-value
  + Hook: ############################
- + Hook: # Dehydrated-Hook-Luadns Version: 1.0.0"
+ + Hook: # Dehydrated-Hook-Luadns Version: 1.0.1"
  + Hook: ############################
  + Hook: + clean_challenge: 1 of 1
  + Hook: ############################
@@ -369,10 +407,10 @@ dependency on **dehydrated** from the package, do to that - do the following:
 First download the "Source Code" archive from the Releases Page [HERE](https://github.com/zoot101/dehydrated-hook-luadns/releases) and extract it.
 
 ```bash
-tar xvf dehydrated-hook-luadns-1.0.0.tar.gz  # For the tar file
-unzip dehydrated-hook-luadns-1.0.0.zip       # For the zip file
+tar xvf dehydrated-hook-luadns-1.0.1.tar.gz  # For the tar file
+unzip dehydrated-hook-luadns-1.0.1.zip       # For the zip file
 
-cd dehydrated-hook-luadns-1.0.0
+cd dehydrated-hook-luadns-1.0.1
 
 # Now edit debian/control to delete the dehydrated depenedency
 nano debian/control # or whatever text edit you prefer
@@ -411,5 +449,4 @@ wildcard certificates and did not do any check for propagation. Although the abo
 entirely the author's work, this script did serve as a starting point - Many thanks to him.
 
 And also many thanks to lukas2511 for [Dehydrated](https://github.com/dehydrated-io/dehydrated) itself!
-
 
