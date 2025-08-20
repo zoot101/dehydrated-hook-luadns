@@ -57,7 +57,7 @@ query_nameserver() {
   local auth_server="${1}"
   local name="${2}"
   local content="${3}"
-  dig +short +retry=3 @"${auth_server}" TXT "${name}" | grep -qw "${content}"
+  dig +short +retry=3 @"${auth_server}" TXT "${name}" | grep -qF \""${content}"\"
 }
 
 # Base Curl Command as per the Luadns.com REST API documentation
