@@ -35,6 +35,7 @@ included as part of the debian package installation.
 
 # Contents
 
+- [Requirements](#requirements)
 - [Usage and Installation](#usage-and-installation)
   - [Package Installation](#package-installation)
   - [Manual Installation](#manual-installation)
@@ -53,6 +54,16 @@ included as part of the debian package installation.
   - [Luadns Rest API and Documentation](#luadns-rest-api-and-documentation)
   - [Dehydrated Documentation](#dehydrated-documentation)
 - [Credits](#credits)
+
+# Requirements
+
+To use this script with **dehydrated**, the following is required up front:
+
+* Ownership of a valid domain name with its DNS hosted at [Luadns.com](https://luadns.com).    
+  - Luadns servers (ns[1-4].luadns.net) configured for the Domain at your Domain Registrar.   
+* API access enabled in the Luadns.com account settings for the Domain.    
+* A valid API Key created for the zone in question
+  - Example: For record.example.org, **example.org** is the Zone)    
 
 # Usage and Installation
 
@@ -332,7 +343,7 @@ Shown below are some sample outputs that will be seen when being used by dehydra
 ```bash
 root : server @ ~ # dehydrated-hook-luadns deploy_challenge test1.example.com file1 token-value
  + Hook: ############################
- + Hook: # Dehydrated-Hook-Luadns Version: 1.0.1"
+ + Hook: # Dehydrated-Hook-Luadns Version: 1.0.1
  + Hook: ############################
  + Hook: + deploy_challenge: 1 of 1
  + Hook: ############################
@@ -371,7 +382,7 @@ root : server @ ~ # dehydrated-hook-luadns deploy_challenge test1.example.com fi
 ```bash
 root : server @ ~ # dehydrated-hook-luadns clean_challenge test1.example.com file1 token-value
  + Hook: ############################
- + Hook: # Dehydrated-Hook-Luadns Version: 1.0.1"
+ + Hook: # Dehydrated-Hook-Luadns Version: 1.0.1
  + Hook: ############################
  + Hook: + clean_challenge: 1 of 1
  + Hook: ############################
