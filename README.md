@@ -53,6 +53,7 @@ included as part of the debian package installation.
 - [Links](#links)
   - [Luadns Rest API and Documentation](#luadns-rest-api-and-documentation)
   - [Dehydrated Documentation](#dehydrated-documentation)
+- [Issues](#issues)
 - [Credits](#credits)
 
 # Requirements
@@ -449,6 +450,12 @@ Then an updated package should be created in the parent directory.
 * [https://github.com/dehydrated-io/dehydrated/blob/master/docs/dns-verification.md](https://github.com/dehydrated-io/dehydrated/blob/master/docs/dns-verification.md)    
 * [https://github.com/dehydrated-io/dehydrated/blob/master/docs/hook\_chain.md](https://github.com/dehydrated-io/dehydrated/blob/master/docs/hook_chain.md)   
 * [https://github.com/dehydrated-io/dehydrated/blob/master/docs/examples/hook.sh](https://github.com/dehydrated-io/dehydrated/blob/master/docs/examples/hook.sh)    
+
+# Issues
+
+Bug reports here on Github are welcome - don't hestitate if you find something wrong.
+
+* [https://github.com/zoot101/dehydrated-hook-luadns/issues](https://github.com/zoot101/dehydrated-hook-luadns/issues)
 
 # Credits
 
