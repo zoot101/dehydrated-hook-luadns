@@ -1,8 +1,14 @@
+dehydrated-hook-luadns (1.0.1-3) stable; urgency=medium
+
+  * Update maintainer details.
+
+ -- Mark <mark9000@fastmail.org>  Thu, 01 Jan 2026 10:30:11 +0100
+
 dehydrated-hook-luadns (1.0.1-2) stable; urgency=medium
 
   * Update maintainer.
 
- -- Mark Finnan <mark9000@fastmail.org>  Wed, 05 Nov 2025 10:19:31 +0100
+ -- Mark <mark9000@fastmail.org>  Wed, 05 Nov 2025 10:19:31 +0100
 
 dehydrated-hook-luadns (1.0.1-1) stable; urgency=medium
 
@@ -40,7 +46,7 @@ dehydrated-hook-luadns (1.0.1-1) stable; urgency=medium
   * Fixed issue where the propagation check would fail if the TXT
     record content started with "-" or "--". Closes #4
 
- -- Mark Finnan <mark9000@fastmail.org>  Wed, 20 Aug 2025 15:16:41 +0100
+ -- Mark <mark9000@fastmail.org>  Wed, 20 Aug 2025 15:16:41 +0100
 
 dehydrated-hook-luadns (1.0.0-1) stable; urgency=medium
 
@@ -65,7 +71,7 @@ dehydrated-hook-luadns (1.0.0-1) stable; urgency=medium
   * Updated version to 1.0.0 as all features planned (for now!) have
     now been included.
 
- -- Mark Finnan <mark9000@fastmail.org>  Tue, 19 Aug 2025 12:42:17 +0100
+ -- Mark <mark9000@fastmail.org>  Tue, 19 Aug 2025 12:42:17 +0100
 
 dehydrated-hook-luadns (0.8.8-1) stable; urgency=medium
 
@@ -85,7 +91,7 @@ dehydrated-hook-luadns (0.8.8-1) stable; urgency=medium
 
   * Added a banner print out showing the Script Version.
 
- -- Mark Finnan <mark9000@fastmail.org>  Tue, 12 Aug 2025 13:27:30 +0100
+ -- Mark <mark9000@fastmail.org>  Tue, 12 Aug 2025 13:27:30 +0100
 
 dehydrated-hook-luadns (0.8.7-2) stable; urgency=medium
 
@@ -95,7 +101,7 @@ dehydrated-hook-luadns (0.8.7-2) stable; urgency=medium
 
   * Package is now 100% lintian clean with no overrides.
 
- -- Mark Finnan <mark9000@fastmail.org>  Sun, 03 Aug 2025 14:54:59 +0100
+ -- Mark <mark9000@fastmail.org>  Sun, 03 Aug 2025 14:54:59 +0100
 
 dehydrated-hook-luadns (0.8.7-1) stable; urgency=medium
 
@@ -103,7 +109,7 @@ dehydrated-hook-luadns (0.8.7-1) stable; urgency=medium
 
   * Minor refinements to man page.
 
- -- Mark Finnan <mark9000@fastmail.org>  Mon, 28 Jul 2025 22:12:17 +0100
+ -- Mark <mark9000@fastmail.org>  Mon, 28 Jul 2025 22:12:17 +0100
 
 dehydrated-hook-luadns (0.8.6-1) stable; urgency=medium
 
@@ -117,7 +123,7 @@ dehydrated-hook-luadns (0.8.6-1) stable; urgency=medium
     from 5 to allow a wait time of up to 128 seconds between
     tries after deploying the challenge.
 
- -- Mark Finnan <mark9000@fastmail.org>  Mon, 21 Jul 2025 16:32:07 +0100
+ -- Mark <mark9000@fastmail.org>  Mon, 21 Jul 2025 16:32:07 +0100
 
 dehydrated-hook-luadns (0.8.5-1) stable; urgency=medium
 
@@ -133,31 +139,31 @@ dehydrated-hook-luadns (0.8.5-1) stable; urgency=medium
   * Curl errors whould now be printed to allow easier debug of
     problems.
 
- -- Mark Finnan <mark9000@fastmail.org>  Fri, 11 Jul 2025 06:59:11 +0100
+ -- Mark <mark9000@fastmail.org>  Fri, 11 Jul 2025 06:59:11 +0100
 
 dehydrated-hook-luadns (0.8.4-1) stable; urgency=medium
 
   * Added a number of retires to curl calls.
 
- -- Mark Finnan <mark9000@fastmail.org>  Mon, 07 Jul 2025 21:28:45 +0100
+ -- Mark <mark9000@fastmail.org>  Mon, 07 Jul 2025 21:28:45 +0100
 
 dehydrated-hook-luadns (0.8.3-1) stable; urgency=medium
 
   * Code cleanup. 
 
- -- Mark Finnan <mark9000@fastmail.org>  Sun, 01 Jun 2025 19:47:14 +0100
+ -- Mark <mark9000@fastmail.org>  Sun, 01 Jun 2025 19:47:14 +0100
 
 dehydrated-hook-luadns (0.8.2-3) stable; urgency=medium
 
   * Added github link to debian/control and debian/copyright.
 
- -- Mark Finnan <mark9000@fastmail.org>  Sat, 24 May 2025 17:40:04 +0100
+ -- Mark <mark9000@fastmail.org>  Sat, 24 May 2025 17:40:04 +0100
 
 dehydrated-hook-luadns (0.8.2-2) stable; urgency=medium
 
   * Added build dependency for dh-exec.
 
- -- Mark Finnan <mark9000@fastmail.org>  Sat, 24 May 2025 09:47:14 +0100
+ -- Mark <mark9000@fastmail.org>  Sat, 24 May 2025 09:47:14 +0100
 
 dehydrated-hook-luadns (0.8.2-1) stable; urgency=medium
 
@@ -167,7 +173,7 @@ dehydrated-hook-luadns (0.8.2-1) stable; urgency=medium
   * Changed to "#!/usr/bin/env bash" from "#!/bin/bash" at top
     of script.
 
- -- Mark Finnan <mark9000@fastmail.org>  Thu, 22 May 2025 13:47:34 +0100
+ -- Mark <mark9000@fastmail.org>  Thu, 22 May 2025 13:47:34 +0100
 
 dehydrated-hook-luadns (0.8.1-1) stable; urgency=medium
 
@@ -177,7 +183,7 @@ dehydrated-hook-luadns (0.8.1-1) stable; urgency=medium
 
   * Minor improvements to printouts.
 
- -- Mark Finnan <mark9000@fastmail.org>  Wed, 21 May 2025 22:34:08 +0100
+ -- Mark <mark9000@fastmail.org>  Wed, 21 May 2025 22:34:08 +0100
 
 dehydrated-hook-luadns (0.8.0-1) stable; urgency=medium
 
@@ -195,7 +201,7 @@ dehydrated-hook-luadns (0.8.0-1) stable; urgency=medium
 
   * Man page formatting improvements.
 
- -- Mark Finnan <mark9000@fastmail.org>  Wed, 21 May 2025 15:54:02 +0100
+ -- Mark <mark9000@fastmail.org>  Wed, 21 May 2025 15:54:02 +0100
 
 dehydrated-hook-luadns (0.7.7-1) stable; urgency=medium
 
@@ -227,7 +233,7 @@ dehydrated-hook-luadns (0.7.7-1) stable; urgency=medium
   * This is probably an edge case, but is intended to be fixed for the
     next version.
 
- -- Mark Finnan <mark9000@fastmail.org>  Wed, 21 May 2025 14:02:37 +0100
+ -- Mark <mark9000@fastmail.org>  Wed, 21 May 2025 14:02:37 +0100
 
 dehydrated-hook-luadns (0.7.2-1) stable; urgency=medium
 
@@ -239,7 +245,7 @@ dehydrated-hook-luadns (0.7.2-1) stable; urgency=medium
 
   * Other minor man page improvements.
 
- -- Mark Finnan <mark9000@fastmail.org>  Sat, 17 May 2025 11:01:16 +0100
+ -- Mark <mark9000@fastmail.org>  Sat, 17 May 2025 11:01:16 +0100
 
 dehydrated-hook-luadns (0.7.1-1) stable; urgency=medium
 
@@ -247,7 +253,7 @@ dehydrated-hook-luadns (0.7.1-1) stable; urgency=medium
     queries the authortative nameserver (ns1.luadns.net) for the
     record deployed. It will now print Try 1/8, 2/8 etc.
 
- -- Mark Finnan <mark9000@fastmail.org>  Fri, 16 May 2025 23:39:57 +0100
+ -- Mark <mark9000@fastmail.org>  Fri, 16 May 2025 23:39:57 +0100
 
 dehydrated-hook-luadns (0.7.0-1) stable; urgency=medium
 
@@ -263,7 +269,7 @@ dehydrated-hook-luadns (0.7.0-1) stable; urgency=medium
   * Change the grep from "-qF" to "-qw". Might need to revisit this
     but it's working well for now.
 
- -- Mark Finnan <mark9000@fastmail.org>  Fri, 16 May 2025 21:39:09 +0100
+ -- Mark <mark9000@fastmail.org>  Fri, 16 May 2025 21:39:09 +0100
 
 dehydrated-hook-luadns (0.6.1-1) stable; urgency=medium
 
@@ -284,7 +290,7 @@ dehydrated-hook-luadns (0.6.1-1) stable; urgency=medium
 
   * Added dependencies for bash and coreutils.
 
- -- Mark Finnan <mark9000@fastmail.org>  Fri, 16 May 2025 16:47:39 +0100
+ -- Mark <mark9000@fastmail.org>  Fri, 16 May 2025 16:47:39 +0100
 
 dehydrated-hook-luadns (0.6.0-1) stable; urgency=medium
 
@@ -302,7 +308,7 @@ dehydrated-hook-luadns (0.6.0-1) stable; urgency=medium
   * Long term would like to re-try API calls if they fail, instead
     of exiting right away.
 
- -- Mark Finnan <mark9000@fastmail.org>  Thu, 15 May 2025 20:48:14 +0100
+ -- Mark <mark9000@fastmail.org>  Thu, 15 May 2025 20:48:14 +0100
 
 dehydrated-hook-luadns (0.5-1) stable; urgency=medium
 
@@ -318,13 +324,13 @@ dehydrated-hook-luadns (0.5-1) stable; urgency=medium
 
   * Added explicit "exit 0" to make sure script exits successfully.
 
- -- Mark Finnan <mark9000@fastmail.org>  Wed, 14 May 2025 09:33:38 +0100
+ -- Mark <mark9000@fastmail.org>  Wed, 14 May 2025 09:33:38 +0100
 
 dehydrated-hook-luadns (0.3.2-1) stable; urgency=medium
 
   * Changed nginx reload command to "systemctl reload nginx"
 
- -- Mark Finnan <mark9000@fastmail.org>  Wed, 07 May 2025 19:58:14 +0100
+ -- Mark <mark9000@fastmail.org>  Wed, 07 May 2025 19:58:14 +0100
 
 dehydrated-hook-luadns (0.3.1-1) stable; urgency=medium
 
@@ -332,7 +338,7 @@ dehydrated-hook-luadns (0.3.1-1) stable; urgency=medium
 
   * Trimmed some of the comments from the main script.
 
- -- Mark Finnan <mark9000@fastmail.org>  Wed, 07 May 2025 11:04:39 +0100
+ -- Mark <mark9000@fastmail.org>  Wed, 07 May 2025 11:04:39 +0100
 
 dehydrated-hook-luadns (0.3-1) stable; urgency=medium
 
@@ -343,17 +349,17 @@ dehydrated-hook-luadns (0.3-1) stable; urgency=medium
   * Also updated postinst script to include this in the print out after
     a new installation.
 
- -- Mark Finnan <mark9000@fastmail.org>  Wed, 07 May 2025 09:10:14 +0100
+ -- Mark <mark9000@fastmail.org>  Wed, 07 May 2025 09:10:14 +0100
 
 dehydrated-hook-luadns (0.2-1) stable; urgency=medium
 
   * Added a postinst maintainer script to print instructions on how
     to use that appears only on a 1st time installation.
 
- -- Mark Finnan <mark9000@fastmail.org>  Sun, 03 May 2025 20:14:01 +0100
+ -- Mark <mark9000@fastmail.org>  Sun, 03 May 2025 20:14:01 +0100
 
 dehydrated-hook-luadns (0.1-1) stable; urgency=medium
 
   * Initial release.
 
- -- Mark Finnan <mark9000@fastmail.org>  Thu, 01 May 2025 17:11:18 +0100
+ -- Mark <mark9000@fastmail.org>  Thu, 01 May 2025 17:11:18 +0100
