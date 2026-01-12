@@ -1,0 +1,365 @@
+dehydrated-hook-luadns (1.0.1-3) stable; urgency=medium
+
+  * Update maintainer details.
+
+ -- Mark <mark9000@fastmail.org>  Thu, 01 Jan 2026 10:30:11 +0100
+
+dehydrated-hook-luadns (1.0.1-2) stable; urgency=medium
+
+  * Update maintainer.
+
+ -- Mark <mark9000@fastmail.org>  Wed, 05 Nov 2025 10:19:31 +0100
+
+dehydrated-hook-luadns (1.0.1-1) stable; urgency=medium
+
+  * Removed automatic_nginx_reload parameter in favor of two new
+    config parameters - deploy_cert_command and deploy_cert_script
+    - Closes #5.
+
+  * New Config Parameter - deploy_cert_command
+    - This allows the user to specify any arbitrary command that is called
+      when the hook script is called with the deploy_cert argument.
+    - This gives much more flexibilty to reload any webservers using the
+      new certificates, as previously only reloading nginx via systemd was
+      possible.
+    - It also doesn't have to reload a webserver, it could be any command
+      the user desires.
+
+  * New Config Parameter - deploy_cert_script
+    - This allows the user to call a custom script when a new certificate
+      is created by dehydrated if they have something unique they wish
+      to be carried out at this point.
+    - It passes in all of the arguments given by dehydrated to the 
+      script when it is called with the deploy_cert option here:
+      https://github.com/dehydrated-io/dehydrated/blob/master/docs/examples/hook.sh
+    - As an example, if the user has an alternative location for the
+      certificates that their webserver uses to dehydrates output
+      directory, the may wish to copy them to a new location and then
+      reload the webserver.
+    - This can also be any custom script - python, perl, bash or otherwise.
+
+  * Note - If one was previously using the automatic_nginx_reload parameter,
+    then updating the dehydrated config is required.
+
+  * Updates to README and man page.
+
+  * Fixed issue where the propagation check would fail if the TXT
+    record content started with "-" or "--". Closes #4
+
+ -- Mark <mark9000@fastmail.org>  Wed, 20 Aug 2025 15:16:41 +0100
+
+dehydrated-hook-luadns (1.0.0-1) stable; urgency=medium
+
+  * Added ability to use an alternative domain for certificate issue
+    through the use of a CNAME record.
+    - For example: A certificate is desired for record1.domain1.org,
+      if _acme-challenge.record1.domain1.org is set up as a CNAME
+      pointing to record2.domain2.org, certificate issue can be done
+      with that domain2.org instead.
+    - The script will now check up front for a CNAME and proceed
+      with what the CNAME record points to instead - see README or
+      manual entry.
+
+  * Updates to manual entry and Readme.
+    - Showcase an example for the use of the CNAME record.
+    - Added links to relevant documentation hosted elsewhere.
+    - Corrected some typos.
+
+  * Made Error messages upon obtaining Zone ID and Record ID 
+    more helpful.
+
+  * Updated version to 1.0.0 as all features planned (for now!) have
+    now been included.
+
+ -- Mark <mark9000@fastmail.org>  Tue, 19 Aug 2025 12:42:17 +0100
+
+dehydrated-hook-luadns (0.8.8-1) stable; urgency=medium
+
+  * Increased number of retries to 11 when querying nameservers
+    after deploying record, for waits of up to 2, 4, 8, 16, 32, 64, 128,
+    256, 512, 1024 and 2048 seconds respectively. This gives a max
+    wait time of ~34minutes which is surely enough - Closes #1.
+    - This is in case the nameservers are slow to update and answer
+      queries with the new record which usually doesn't happen but is
+      sometimes possible - Closes #1.
+
+  * Added a number of retries (3) to all dig calls.
+
+  * Code cleanup and trimmed comments.
+
+  * Removed copyright from main script in favor of debian/copyright.
+
+  * Added a banner print out showing the Script Version.
+
+ -- Mark <mark9000@fastmail.org>  Tue, 12 Aug 2025 13:27:30 +0100
+
+dehydrated-hook-luadns (0.8.7-2) stable; urgency=medium
+
+  * Removed build dependency on dh-make as it wasn't being used.
+
+  * Tweaked debian/rules to satisfy a remaining lintian warning.
+
+  * Package is now 100% lintian clean with no overrides.
+
+ -- Mark <mark9000@fastmail.org>  Sun, 03 Aug 2025 14:54:59 +0100
+
+dehydrated-hook-luadns (0.8.7-1) stable; urgency=medium
+
+  * Completed lintian check on debian package - all clean.
+
+  * Minor refinements to man page.
+
+ -- Mark <mark9000@fastmail.org>  Mon, 28 Jul 2025 22:12:17 +0100
+
+dehydrated-hook-luadns (0.8.6-1) stable; urgency=medium
+
+  * Tidied up jq script calls for parsing json data received.
+
+  * Changed the query for the zone records to directly query
+    the zone records to simplify the process of obtaining the
+    record ID.
+
+  * Changed the number of retries to query for the record to 7
+    from 5 to allow a wait time of up to 128 seconds between
+    tries after deploying the challenge.
+
+ -- Mark <mark9000@fastmail.org>  Mon, 21 Jul 2025 16:32:07 +0100
+
+dehydrated-hook-luadns (0.8.5-1) stable; urgency=medium
+
+  * Made checks of API server responses more robust.
+
+  * Zone ID is now checked that it is a valid number.
+
+  * Creation of the Record is checked for the same content
+    received back in the json data from the API server,
+    previously it was possible for this check to fail in
+    certain circumstance.
+
+  * Curl errors whould now be printed to allow easier debug of
+    problems.
+
+ -- Mark <mark9000@fastmail.org>  Fri, 11 Jul 2025 06:59:11 +0100
+
+dehydrated-hook-luadns (0.8.4-1) stable; urgency=medium
+
+  * Added a number of retires to curl calls.
+
+ -- Mark <mark9000@fastmail.org>  Mon, 07 Jul 2025 21:28:45 +0100
+
+dehydrated-hook-luadns (0.8.3-1) stable; urgency=medium
+
+  * Code cleanup. 
+
+ -- Mark <mark9000@fastmail.org>  Sun, 01 Jun 2025 19:47:14 +0100
+
+dehydrated-hook-luadns (0.8.2-3) stable; urgency=medium
+
+  * Added github link to debian/control and debian/copyright.
+
+ -- Mark <mark9000@fastmail.org>  Sat, 24 May 2025 17:40:04 +0100
+
+dehydrated-hook-luadns (0.8.2-2) stable; urgency=medium
+
+  * Added build dependency for dh-exec.
+
+ -- Mark <mark9000@fastmail.org>  Sat, 24 May 2025 09:47:14 +0100
+
+dehydrated-hook-luadns (0.8.2-1) stable; urgency=medium
+
+  * Added a section in the manual to talk through the detailed 
+    operation of the script at a low level.
+
+  * Changed to "#!/usr/bin/env bash" from "#!/bin/bash" at top
+    of script.
+
+ -- Mark <mark9000@fastmail.org>  Thu, 22 May 2025 13:47:34 +0100
+
+dehydrated-hook-luadns (0.8.1-1) stable; urgency=medium
+
+  * Added a check for sed in the check dependencies section of the
+    script. Also included sed in the list of dependencies in the
+    man page.
+
+  * Minor improvements to printouts.
+
+ -- Mark <mark9000@fastmail.org>  Wed, 21 May 2025 22:34:08 +0100
+
+dehydrated-hook-luadns (0.8.0-1) stable; urgency=medium
+
+  * Fixed issue referred to below whereby the script would hang
+    indefinitely if multiple Record IDs were found with the same
+    name, type AND content.
+
+  * This is an edge case that is probably impossible if used with
+    dehydrated, but is possible to have happen if multiple
+    deploy_challenge calls to the script are made with the same values
+    before being followed by a clean_challenge call.
+
+  * Now the script will delete all Records found for a given name, TXT
+    type and the same content.
+
+  * Man page formatting improvements.
+
+ -- Mark <mark9000@fastmail.org>  Wed, 21 May 2025 15:54:02 +0100
+
+dehydrated-hook-luadns (0.7.7-1) stable; urgency=medium
+
+  * Added functionality to 1st query the luadns nameservers for the
+    NS records for the zone name (root of the fqdn) passed in via
+    dehydrated.
+
+  * The script will exit if none of the luadns nameservers have any
+    NS records for the domain passed in from dehydrated. This serves as
+    a means to check the domain for validity.
+
+  * The script will now check all of the official nameservers (usually
+    ns1.luadns.net, ns2.luadns.net, ns3.luadns.net and ns4.luadns.net)
+    obtained from the above check for the TXT record after deploying.
+    Previously it would only check ns1.luadns.net.
+
+  * The above functionality was added as it is possible to use vanity
+    nameservers from Luadns.com with their paid plans. This way the script
+    checks the real authorative nameserver after deploying the record.
+
+  * Changed number of retries in the propagation check from 8 to 5.
+
+  * Updates to man page to mention this new functionality.
+
+  * Noting that there is an issue with the clean_challenge function that
+    if there are 2 records with the same name, type AND content whereby
+    the script will hang.
+
+  * This is probably an edge case, but is intended to be fixed for the
+    next version.
+
+ -- Mark <mark9000@fastmail.org>  Wed, 21 May 2025 14:02:37 +0100
+
+dehydrated-hook-luadns (0.7.2-1) stable; urgency=medium
+
+  * Moved the dig command to query the nameserver for the record
+    being deployed into its own function to make things a bit tidier.
+
+  * Added information to manual about creating an API key via the
+    Luadns.com Web UI.
+
+  * Other minor man page improvements.
+
+ -- Mark <mark9000@fastmail.org>  Sat, 17 May 2025 11:01:16 +0100
+
+dehydrated-hook-luadns (0.7.1-1) stable; urgency=medium
+
+  * Some minor improvements to the print outs of the function that
+    queries the authortative nameserver (ns1.luadns.net) for the
+    record deployed. It will now print Try 1/8, 2/8 etc.
+
+ -- Mark <mark9000@fastmail.org>  Fri, 16 May 2025 23:39:57 +0100
+
+dehydrated-hook-luadns (0.7.0-1) stable; urgency=medium
+
+  * Updated man pages to reflect change about awk as a dependency.
+
+  * Updated man page to show how to test the script directly, and
+    encouraged user to try it out before using it with dehydrated
+    to issue real certificates.
+
+  * Changed the function that waits for the record to be deployed to
+    with for an exponentially increasing number of seconds each try.
+
+  * Change the grep from "-qF" to "-qw". Might need to revisit this
+    but it's working well for now.
+
+ -- Mark <mark9000@fastmail.org>  Fri, 16 May 2025 21:39:09 +0100
+
+dehydrated-hook-luadns (0.6.1-1) stable; urgency=medium
+
+  * Tidied up curl commands with a custom curl_cmd function.
+
+  * Changed method of extracting the zone name to a simplier method
+    using awk instead.
+
+  * Added a check for awk being installed.
+
+  * Streamlined deploy_challenge and clean_challenge print outs to
+    be more consistant.
+
+  * Removed the use of echo to pass the Zone ID or Record ID outside
+    the relevant functions so exit works as expected.
+
+  * Trimmed some of the comments from the main script.
+
+  * Added dependencies for bash and coreutils.
+
+ -- Mark <mark9000@fastmail.org>  Fri, 16 May 2025 16:47:39 +0100
+
+dehydrated-hook-luadns (0.6.0-1) stable; urgency=medium
+
+  * Added HOOK_CHAIN="yes" support for deploy_challenge and clean_challenge
+    functions. Script will now support just a single call by dehydrated to
+    deploy or clean multiple records/challenges at once.
+
+  * Tidied up message printouts of the script.
+
+  * Updated man page to mention HOOK_CHAIN="yes" is now supported.
+
+  * Removed "set -e" to prevent script exiting with all non-zero return
+    codes as this was undesirable behaviour. 
+
+  * Long term would like to re-try API calls if they fail, instead
+    of exiting right away.
+
+ -- Mark <mark9000@fastmail.org>  Thu, 15 May 2025 20:48:14 +0100
+
+dehydrated-hook-luadns (0.5-1) stable; urgency=medium
+
+  * Removed abort 1 exit function in favor of "set -e".
+
+  * Changed method of handling input arguments to the exact same method
+    posted in the dehydrated documentation here:
+    https://github.com/dehydrated-io/dehydrated/blob/master/docs/examples/hook.sh
+
+  * Changed reload of nginx to just print an error if not successful,
+    instead of returning an error code so to not interfere with the
+    operation of the master dehydrated script.
+
+  * Added explicit "exit 0" to make sure script exits successfully.
+
+ -- Mark <mark9000@fastmail.org>  Wed, 14 May 2025 09:33:38 +0100
+
+dehydrated-hook-luadns (0.3.2-1) stable; urgency=medium
+
+  * Changed nginx reload command to "systemctl reload nginx"
+
+ -- Mark <mark9000@fastmail.org>  Wed, 07 May 2025 19:58:14 +0100
+
+dehydrated-hook-luadns (0.3.1-1) stable; urgency=medium
+
+  * Updated manpage to specify deploy_cert is now supported.
+
+  * Trimmed some of the comments from the main script.
+
+ -- Mark <mark9000@fastmail.org>  Wed, 07 May 2025 11:04:39 +0100
+
+dehydrated-hook-luadns (0.3-1) stable; urgency=medium
+
+  * Added a deploy_cert function to automatically reload nginx if a new
+    cert is issued. Requires export automatic_nginx_reload="yes" in the
+    main dehydrated config.
+
+  * Also updated postinst script to include this in the print out after
+    a new installation.
+
+ -- Mark <mark9000@fastmail.org>  Wed, 07 May 2025 09:10:14 +0100
+
+dehydrated-hook-luadns (0.2-1) stable; urgency=medium
+
+  * Added a postinst maintainer script to print instructions on how
+    to use that appears only on a 1st time installation.
+
+ -- Mark <mark9000@fastmail.org>  Sun, 03 May 2025 20:14:01 +0100
+
+dehydrated-hook-luadns (0.1-1) stable; urgency=medium
+
+  * Initial release.
+
+ -- Mark <mark9000@fastmail.org>  Thu, 01 May 2025 17:11:18 +0100
