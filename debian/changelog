@@ -1,3 +1,41 @@
+dehydrated-hook-luadns (1.0.2-1) stable; urgency=medium
+
+  * Added query_source_ip parameter that can be added to the
+    dehydrated configuration file.
+    - This is to set a DNS Query Source to a non-default local
+      network interface. This is especially useful if one is using
+      a VPN as some providers can hijack DNS requests leading
+      to unexpected behaviour when querying the Luadns DNS
+      nameservers.
+    - The DNS Queries to query the LuaDNS nameservers can now be
+      configured to bypass any VPN connections using this
+      option.
+    - This is only relevant to DNS queries direct to the LuaDNS
+      nameservers.
+
+  * Fixed an issue whereby if the script could not detect successful
+    deployment of the TXT record after all retries with the increasing
+    wait period, it would still continue. Now the script will correctly
+    fail and report an error condition back to dehydrated.
+
+  * Fixed the up front check for a CNAME record which was not
+    previously working.
+    - Made details in README & Manual entry more specific for how
+      the CNAME check works.
+
+  * Script now handles the unlikely error case where the NS DNS query
+    reply up front is empty.
+
+  * Sorted Nameservers received when initially querying the
+    domain nameservers. Previously the order could have been random.
+
+  * Code Cleanup
+    - Improved error handling.
+    - Removed use of "which" in favor of "command -v"
+    - Removed use of seq.
+
+ -- Mark <mark9000@fastmail.org>  Wed, 06 May 2026 23:18:57 +0100
+
 dehydrated-hook-luadns (1.0.1-3) stable; urgency=medium
 
   * Update maintainer details.
