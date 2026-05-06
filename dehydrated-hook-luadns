@@ -469,7 +469,7 @@ exit_hook() {
   local ERROR="${1:-}"
 
   # Call exit_hook_script if Specified and pass in ERROR given by dehydrated
-  if [[ -x "${exit_hook_script}" ]]; then
+  if [[ -x "${exit_hook_script}" && -n "${ERROR}" ]]; then
     if "${exit_hook_script}" "$@"; then
       log2 "Success"
     else
