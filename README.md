@@ -31,7 +31,7 @@ with what was given by **dehyrated**, checks for propagation by querying the Lua
 to see if the record just deployed is live, and then hands control back to **dehydrated**.
 
 For more details a detailed desription is provided in the manual entry that is
-included as part of the debian package installation.
+included as part of the Debian package installation.
 
 # Contents
 
@@ -40,14 +40,18 @@ included as part of the debian package installation.
   - [Package Installation](#package-installation)
   - [Manual Installation](#manual-installation)
 - [Dehydrated Config Settings](#dehydrated-config-settings)
+- [Extra Dehydrated Config Settings](#extra-dehydrated-config-settings)
   - [deploy\_cert\_command](#deploy_cert_command)
   - [deploy\_cert\_script](#deploy_cert_script)
+  - [query\_source\_ip](#query_source_ip)
+  - [exit\_hook\_script](#exit_hook_script)
 - [Using an Alternative Domain for Certificate Issue](#using-an-alternative-domain-for-certificate-issue)
 - [Testing Directly](#testing-directly)
   - [Supported Actions](#supported-actions)
     - [deploy\_challenge](#deploy_challenge)
     - [clean\_challenge](#clean_challenge)
     - [deploy\_cert](#deploy_cert)
+    - [exit\_hook](#exit_hook)
 - [Sample Outputs](#sample-outputs)
 - [Removing the Dependency on Dehydrated from the Package](#removing-the-dependency-on-dehydrated-from-the-package)
 - [Links](#links)
@@ -81,7 +85,7 @@ distros also, since the dependencies are very simple.
 Install the package like so. It's better to use **apt** instead of **dpkg** so the dependencies are installed automatically.
 
 ```bash
-sudo apt install ./dehydrated-hook-luadns_1.0.1-1_amd64.deb
+sudo apt install ./dehydrated-hook-luadns_1.0.2-1_amd64.deb
 ```
 
 Then, continue from the [Dehydrated Config Section](#dehydrated-config-settings) section below.
@@ -91,8 +95,8 @@ Then, continue from the [Dehydrated Config Section](#dehydrated-config-settings)
 Otherwise to install manually, download the latest source code archive from the releases page [HERE](https://github.com/zoot101/dehydrated-hook-luadns/releases) and extract it
 
 ```bash
-unzip dehydrated-hook-luadns-1.0.1.zip      # For the Zip File
-tar xvf dehydrated-hook-luadns-1.0.1.tar.gz # For the Tar File
+unzip dehydrated-hook-luadns-1.0.2.zip      # For the Zip File
+tar xvf dehydrated-hook-luadns-1.0.2.tar.gz # For the Tar File
 
 cd dehydrated-hook-luadns
 
@@ -159,13 +163,17 @@ considered here.
 
 In the above example config, **lua_email** is your login email for **Luadns.com** and **lua_api_key** is an
 API generated via the Luadns.com WebUI that has access to the Domain (or DNS Zone) you wish to issue certificates
-for. Note that one needs to enable API access.
+for. Note that one needs to enable API access. The use of "export" is **REQUIRED!**.
 
 The **HOOK_CHAIN** option is supported for certificates with
 multiple alternative names. This is useful to reduce the
 number of calls to the script. It is recommeneded to enable
 this option within the dehydrated config. However the script
 will also work with **HOOK_CHAIN="no"**
+
+# Extra Dehydrated Config Settings
+
+All of the below parameters are optional.
 
 ## deploy\_cert\_command
 
@@ -183,6 +191,8 @@ Some examples could be:
 * export deploy\_cert\_command="systemctl reload nginx"   
 * export deploy\_cert\_command="/etc/init.d/apache restart"
 
+Omit entirely from the **dehydrated** configuration if not using.
+
 ## deploy\_cert\_script
 
 The **deploy_cert_script** parameter is also optional. This allows the user to
@@ -192,7 +202,7 @@ of the arguments given by **dehydrated** for the **deploy_cert** function detail
 Must be executable.
 
 This could be used for example to copy the new certificate(s) created by **dehydrated** to
-a new location and reload the webserver using then. It also could be used to convert the
+a new location and reload the webserver using it then. It also could be used to convert the
 certificates to a different format if desired. It doesn't have to be a bash script,
 python, perl, an executable or anything that can be called from the command line should be OK.
 
@@ -202,6 +212,46 @@ something, then use the **deploy_cert_script** option. Both can also be used if 
 
 Note the script can also be passed to **dehydrated** directly
 by using the **-k** or **\--hook** options. See the dehydrated documentation.
+
+Omit entirely from the **dehydrated** configuration if not using.
+
+## query\_source\_ip
+
+This option should not be needed for the majority of setups.
+
+This is to set a DNS Query Source to a non-default local network interface when querying
+the **LuaDNS** nameservers to check if the TXT record was correctly deployed. This is
+especially useful if one is using a VPN as some providers can hijack DNS requests leading
+to unexpected behaviour when querying the Luadns DNS nameservers directly.
+
+This option allows the DNS Queries to query the LuaDNS nameservers directly to be
+configured to bypass any VPN connections.
+
+This is only relevant to DNS queries direct to the LuaDNS nameservers, ie. when the TXT record
+deployed is checked that it is correctly returned from the **LuaDNS** nameservers upon
+querying them.
+
+To use, add the following to the **dehydrated** configuration:
+
+* export query\_source\_ip="192.168.1.9"
+
+Note that the address specified should be a valid IP address of a **LOCAL** network
+interface. The script will exit with an error if this is not the case.
+
+Omit entirely from the **dehydrated** configuration if not using.
+
+## exit\_hook\_script
+
+If **dehydrated** exits with an error, it will call the hook script with the **exit_hook**
+action and pass the error message into it.
+
+This option can be used to get the hook script to call another custom script when **dehydrated**
+exits with an error condition. This can be useful to do something such as notify the user if
+an error condition occured. Example:
+
+* export exit\_hook\_script="/path/to/exit/hook/script"
+
+Must be executable. Omit entirely if not using.
 
 After the above lines are deployed in the wider dehydrated
 config, that should allow one to solve the DNS-01 challenge
@@ -228,7 +278,7 @@ certificates instead. Expanding the example, lets say the less important domain 
 * Taking the example above - **critical-example.org**, let us say that one wants a certficate for
   **record1.critical.example.org**.   
 * Then one can create a CNAME record (\_acme-challenge.record1.critical-example.org) at the DNS
-  provider for **critical-example.org**  that points to **certificate-issue.non-critical-example.org**.    
+  provider for **critical-example.org**  that points to \_acme-challenge.record1.non-critical-example.org.    
 * This way, the deployment of the TXT record for certificate issue can instead be
   done on **non-critical-example.org** instead of **critical-example.org**.    
 * This gives the system admin some peace of mind to know that if the Webserver gets 
@@ -286,6 +336,7 @@ Supported are:
 1. **deploy_challenge**    
 2. **clean_challenge**   
 3. **deploy_cert**    
+4. **exit_hook**
 
 ### deploy\_challenge
 
@@ -337,6 +388,14 @@ dehydrated-hook-luadns deploy_cert
 dehydrated-hook-luadns deploy_cert "domain" "keyfile" "certfile" "fullchainfile" "chainfile" "timestamp"
 ```
 
+### exit\_hook
+
+If **exit_hook** is used as an **ACTION**, the script will issue the **exit_hook_script**
+and pass in the error it received from **dehydrated** as per [HERE](https://github.com/dehydrated-io/dehydrated/blob/master/docs/examples/hook.sh)
+
+This is useful to do something upon error conditions like send
+a notification to a Self-Hosted **ntfy** server for example.
+
 # Sample Outputs
 
 Shown below are some sample outputs that will be seen when being used by dehydrated.
@@ -344,7 +403,7 @@ Shown below are some sample outputs that will be seen when being used by dehydra
 ```bash
 root : server @ ~ # dehydrated-hook-luadns deploy_challenge test1.example.com file1 token-value
  + Hook: ############################
- + Hook: # Dehydrated-Hook-Luadns Version: 1.0.1
+ + Hook: # Dehydrated-Hook-Luadns Version: 1.0.2
  + Hook: ############################
  + Hook: + deploy_challenge: 1 of 1
  + Hook: ############################
@@ -383,7 +442,7 @@ root : server @ ~ # dehydrated-hook-luadns deploy_challenge test1.example.com fi
 ```bash
 root : server @ ~ # dehydrated-hook-luadns clean_challenge test1.example.com file1 token-value
  + Hook: ############################
- + Hook: # Dehydrated-Hook-Luadns Version: 1.0.1
+ + Hook: # Dehydrated-Hook-Luadns Version: 1.0.2
  + Hook: ############################
  + Hook: + clean_challenge: 1 of 1
  + Hook: ############################
@@ -419,10 +478,10 @@ dependency on **dehydrated** from the package, do to that - do the following:
 First download the "Source Code" archive from the Releases Page [HERE](https://github.com/zoot101/dehydrated-hook-luadns/releases) and extract it.
 
 ```bash
-tar xvf dehydrated-hook-luadns-1.0.1.tar.gz  # For the tar file
-unzip dehydrated-hook-luadns-1.0.1.zip       # For the zip file
+tar xvf dehydrated-hook-luadns-1.0.2.tar.gz  # For the tar file
+unzip dehydrated-hook-luadns-1.0.2.zip       # For the zip file
 
-cd dehydrated-hook-luadns-1.0.1
+cd dehydrated-hook-luadns-1.0.2
 
 # Now edit debian/control to delete the dehydrated depenedency
 nano debian/control # or whatever text edit you prefer
