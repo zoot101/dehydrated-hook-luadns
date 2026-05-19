@@ -1,3 +1,21 @@
+dehydrated-hook-luadns (1.0.3-1) stable; urgency=medium
+
+  * Added some printouts to make calling of exit hook
+    and deploy cert scripts more clear.
+
+  * Made printouts more clear for CNAME record test, and
+    improved test to handle error conditions.
+
+  * Made finding of root domain more robust. Example:
+    - record1.example.org, Root is example.org.
+
+  * Code Improvements:
+    - Added "set -euo pipefail" for more modern error handling.
+    - Removed all instances of echo piped to into something else.
+    - Trimmed some comments. 
+
+ -- Mark <mark9000@fastmail.org>  Tue, 19 May 2026 15:05:07 +0100
+
 dehydrated-hook-luadns (1.0.2-1) stable; urgency=medium
 
   * Added query_source_ip parameter that can be added to the
