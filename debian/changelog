@@ -1,3 +1,10 @@
+dehydrated-hook-luadns (1.0.4-1) stable; urgency=medium
+
+  * Small update: Remove the usage of "true" in favor of a
+    better method if the curl api calls are not successful.
+
+ -- Mark <mark9000@fastmail.org>  Wed, 20 May 2026 20:10:07 +0100
+
 dehydrated-hook-luadns (1.0.3-1) stable; urgency=medium
 
   * Added some printouts to make calling of exit hook
