@@ -6,7 +6,7 @@
 ###############################
 
 # Version Number
-version="1.0.3"
+version="1.0.4"
 
 # Modern Error Handling
 set -euo pipefail
@@ -178,11 +178,11 @@ check_response_was_valid() {
 luadns_get_zone_id() {
   local luadns_zone_name="${1}"
   if [[ -z "${luadns_zone_name}" ]]; then error "Zone Name is empty"; fi
-  local response="$(curl_cmd "${lua_api_url}"/zones)" || true
+  if ! local response="$(curl_cmd "${lua_api_url}"/zones)"; then local response="null";fi
   check_response_was_valid "${response}"
 
   # Parse Response with jq command to pick out the Zone ID & Check if it's a number
-  zone_id="$(jq -r ".[] | select(.name==\"${luadns_zone_name}\").id" <<<"${response}")" || true 
+  if ! zone_id="$(jq -r ".[] | select(.name==\"${luadns_zone_name}\").id" <<<"${response}")"; then zone_id="null"; fi 
   if ! is_number "${zone_id}"; then error "Zone ID could not be obtained - Problem with API Key?"; fi
 }
 
@@ -197,13 +197,13 @@ luadns_create_new_record() {
   if [[ "${luadns_record:0-1}" != "." ]]; then luadns_record="${luadns_record}""."; fi
 
   # Create New Record as per official API Documentation & Check Response
-  local response="$(curl_cmd -X POST \
+  if ! local response="$(curl_cmd -X POST \
     -d "{ \":zone_id\":${luadns_zone_id}, \"name\":\"${luadns_record}\", \"type\":\"${luadns_record_type}\", \"content\":\"${luadns_record_content}\"}" \
-    "${lua_api_url}"/zones/$zone_id/records)" || true
+    "${lua_api_url}"/zones/$zone_id/records)"; then local response="null"; fi
   check_response_was_valid "${response}"
 
   # Check the record content deployed was received back
-  local success_check="$(jq -r ".content" <<<"${response}")" || true
+  if ! local success_check="$(jq -r ".content" <<<"${response}")"; then local success_check="null"; fi
   if [[ "${success_check}" == "${luadns_record_content}" ]]; then
     log2 "Record successfully deployed."
   else
@@ -221,12 +221,12 @@ luadns_get_record_id() {
   if [[ "${luadns_record_name:0-1}" != "." ]]; then luadns_record_name="${luadns_record_name}""."; fi
 
   # Get the record id for the above record using the API & Check Response
-  local response="$(curl_cmd "${lua_api_url}"/zones/${luadns_zone_id}/records)" || true
+  if ! local response="$(curl_cmd "${lua_api_url}"/zones/${luadns_zone_id}/records)"; then local response="null"; fi
   check_response_was_valid "${response}" 
 
   # Process the json data received to select TXT Type, Name and Content & Check Response
   # (Can't use number check here as in certain edge cases multiple IDs are received...)
-  record_id="$(jq -r ".[] | select(.name==\"${luadns_record_name}\" and .type==\"TXT\" and .content==\"${luadns_record_content}\").id" <<<"${response}")" || true
+  if ! record_id="$(jq -r ".[] | select(.name==\"${luadns_record_name}\" and .type==\"TXT\" and .content==\"${luadns_record_content}\").id" <<<"${response}")"; then record_id="null"; fi
   if [[ -z "${record_id}" ]]; then error "ERROR: Record ID could not be obtained - Does the record exist?"; fi
 }
 
@@ -247,11 +247,11 @@ luadns_delete_record() {
     local luadns_record_id_2="$(sed -n "$k"p <<<"${luadns_record_id}")"
 
     # Use the zone_id and the record_id to delete the record & Check Response
-    local response="$(curl_cmd -X DELETE "${lua_api_url}"/zones/${luadns_zone_id}/records/${luadns_record_id_2})" || true
+    if ! local response="$(curl_cmd -X DELETE "${lua_api_url}"/zones/${luadns_zone_id}/records/${luadns_record_id_2})"; then local response="null"; fi
     check_response_was_valid "${response}"
   
     # Check for success - Was the same record id returned after the deletion?
-    local success_check="$(jq -r ".id" <<<"${response}")" || true
+    if ! local success_check="$(jq -r ".id" <<<"${response}")"; then local success_check="null"; fi
     if [[ "${success_check}" == "${luadns_record_id_2}" ]]; then
       log2 "Record:" "${luadns_record_id_2}" "Successfully Deleted"
     else
