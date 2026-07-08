@@ -6,7 +6,7 @@
 ###############################
 
 # Version Number
-version="1.0.4"
+readonly version="1.0.5"
 
 # Modern Error Handling
 set -euo pipefail
@@ -14,9 +14,9 @@ set -euo pipefail
 ###############################
 # VARIABLES
 ###############################
-lua_api_url="https://api.luadns.com/v1" 
-prefix="_acme-challenge."
-luadns_nameservers=( "ns1.luadns.net" "ns2.luadns.net" \
+readonly lua_api_url="https://api.luadns.com/v1" 
+readonly prefix="_acme-challenge."
+readonly -a luadns_nameservers=( "ns1.luadns.net" "ns2.luadns.net" \
                      "ns3.luadns.net" "ns4.luadns.net" )
 
 ###############################
@@ -24,20 +24,20 @@ luadns_nameservers=( "ns1.luadns.net" "ns2.luadns.net" \
 ###############################
 # Log functions
 log1() {
-  echo " + Hook:" "$@"
+  printf '%s\n' " + Hook: $*"
 }
 
 log2() {
-  echo " + Hook: -->" "$@"
+  printf '%s\n' " + Hook: --> $*"
 }
 
 log3() {
-  echo " + Hook: ---->" "$@"
+  printf '%s\n' " + Hook: ----> $*"
 }
 
 # Error Function
 error() {
-  echo " + Hook: ERROR:" "$@"
+  printf '%s\n' " + Hook: ERROR: $*"
   exit 1
 }
 
@@ -78,7 +78,7 @@ query_nameserver() {
 
 # Base Curl Command as per the Luadns.com REST API documentation
 curl_cmd() {
-  curl --retry 3 --silent --show-error -u "${lua_email}:${lua_api_key}" -H 'Accept: application/json' "$@"
+  curl --fail --retry 3 --silent --show-error -u "${lua_email}:${lua_api_key}" -H 'Accept: application/json' -H "Content-Type: application/json" "$@"
 }
 
 # Check that the lua_email and lua_api_token variables have been defined
@@ -92,7 +92,7 @@ luadns_credentials_check(){
 
 # Check dependencies are installed
 check_dependencies() {
-  dependencies=( "curl" "dig" "grep" "awk" "sed" "jq" "sort" )
+  local -a dependencies=( "curl" "dig" "grep" "awk" "sed" "jq" "sort" "wc" "ip" "sleep" "bash")
   for cmd in "${dependencies[@]}"; do
     if ! command -v "${cmd}" &>"/dev/null"; then error "${cmd} is not installed - Exiting"; fi
   done
@@ -102,6 +102,7 @@ check_dependencies() {
 check_for_cname() {
   local fqdn="${1}"
   local auth_server="${luadns_nameservers[0]}"
+  local cname_check
   log1 "Checking if ${fqdn} is a CNAME..."
   if [[ -n "${fqdn}" ]]; then
     if cname_check="$(dig_cmd @"${auth_server}" CNAME "${fqdn}")"; then
@@ -141,15 +142,15 @@ get_zone_nameservers() {
 
   # Query each of the nameservers defined above for NS Records
   for ((i=0; i<=(N_luadns_nameservers-1); i++)); do
-    log2 "Querying Nameserver" $((i+1))"/"$N_luadns_nameservers":" "${luadns_nameservers[$i]}"
+    log2 "Querying Nameserver $((i+1))/$N_luadns_nameservers: ${luadns_nameservers[$i]}"
 
     # Call above function to use dig to get NS records
     if ! zone_ns_records="$(query_zone_ns_records "${luadns_nameservers[$i]}" "${zone}")"; then
       log3 "No NS records obtained from" "${luadns_nameservers[$i]}" "- Trying Next Nameserver..."
     else
       N_zone_ns_records="$(wc -l <<<"${zone_ns_records}")"
-      if [[ "$N_zone_ns_records" != 0 ]]; then
-        log3 "Success: Obtained" $N_zone_ns_records "NS records for" "${zone}"
+      if (( N_zone_ns_records > 0 )); then
+        log3 "Success: Obtained $N_zone_ns_records NS records for ${zone}"
         break
       else
         log3 "No NS records obtained from" "${luadns_nameservers[$i]}" "- Trying Next Nameserver..."
@@ -157,7 +158,7 @@ get_zone_nameservers() {
     fi
 
     # Otherwise check if all initial nameservers have been tried
-    if [[ $i == $((N_luadns_nameservers-1)) ]]; then
+    if (( i == N_luadns_nameservers-1 )); then
       error "Could not find NS records for" "${zone}" "from any Luadns Nameserver - Is the domain correct and using Luadns Nameservers?"
     fi
   done
@@ -168,17 +169,17 @@ get_zone_nameservers() {
 ###############################
 # Official Documentation is https://www.luadns.com/api.html
 
-# Easiest thing to do is check the length of the string obtained
+# Validate that valid json data was received from the LuaDNS API
 check_response_was_valid() {
-  local response="${1}"
-  if [[ ${#response} -lt 100 ]]; then error "Invalid Response received from server - Exiting."; fi 
+  if ! jq -e . >/dev/null <<<"$1"; then error "Invalid JSON returned from LuaDNS API - Exiting"; fi
 }
 
 # Get the Zone ID for the above Domain Name
 luadns_get_zone_id() {
+  local response
   local luadns_zone_name="${1}"
   if [[ -z "${luadns_zone_name}" ]]; then error "Zone Name is empty"; fi
-  if ! local response="$(curl_cmd "${lua_api_url}"/zones)"; then local response="null";fi
+  if ! response="$(curl_cmd "${lua_api_url}"/zones)"; then response="null";fi
   check_response_was_valid "${response}"
 
   # Parse Response with jq command to pick out the Zone ID & Check if it's a number
@@ -192,18 +193,28 @@ luadns_create_new_record() {
   local luadns_record="${2}"
   local luadns_record_type="${3}"
   local luadns_record_content="${4}"
+  local response success_check json_data
 
   # Add trailing dot if not present - required for the Record ID
   if [[ "${luadns_record:0-1}" != "." ]]; then luadns_record="${luadns_record}""."; fi
 
   # Create New Record as per official API Documentation & Check Response
-  if ! local response="$(curl_cmd -X POST \
-    -d "{ \":zone_id\":${luadns_zone_id}, \"name\":\"${luadns_record}\", \"type\":\"${luadns_record_type}\", \"content\":\"${luadns_record_content}\"}" \
-    "${lua_api_url}"/zones/$zone_id/records)"; then local response="null"; fi
+  json_data="$(
+    jq -n --argjson zone_id "$luadns_zone_id" --arg name "$luadns_record" \
+          --arg type "$luadns_record_type" --arg content "$luadns_record_content" \
+          '{
+             zone_id: $zone_id,
+             name: $name,
+             type: $type,
+             content: $content
+          }'
+  )"
+
+  if ! response="$(curl_cmd -X POST -d "${json_data}" "${lua_api_url}/zones/$luadns_zone_id/records")"; then response="null"; fi
   check_response_was_valid "${response}"
 
   # Check the record content deployed was received back
-  if ! local success_check="$(jq -r ".content" <<<"${response}")"; then local success_check="null"; fi
+  if ! success_check="$(jq -r ".content" <<<"${response}")"; then success_check="null"; fi
   if [[ "${success_check}" == "${luadns_record_content}" ]]; then
     log2 "Record successfully deployed."
   else
@@ -216,12 +227,13 @@ luadns_get_record_id() {
   local luadns_zone_id="${1}"
   local luadns_record_name="${2}"
   local luadns_record_content="${3}"
+  local response
 
   # Add trailing dot if not present - required for the Record ID
   if [[ "${luadns_record_name:0-1}" != "." ]]; then luadns_record_name="${luadns_record_name}""."; fi
 
   # Get the record id for the above record using the API & Check Response
-  if ! local response="$(curl_cmd "${lua_api_url}"/zones/${luadns_zone_id}/records)"; then local response="null"; fi
+  if ! response="$(curl_cmd "${lua_api_url}/zones/${luadns_zone_id}/records")"; then response="null"; fi
   check_response_was_valid "${response}" 
 
   # Process the json data received to select TXT Type, Name and Content & Check Response
@@ -235,23 +247,24 @@ luadns_delete_record() {
   local luadns_zone_id="${1}"
   local luadns_record_id="${2}"
   local k=0
+  local response success_check luadns_record_id_2 N_luadns_record_id
 
   # Do a check for multiple record IDs and loop through them if found
-  local N_luadns_record_id="$(wc -l <<<"${luadns_record_id}")"
-  if [[ $N_luadns_record_id != 1 ]]; then
-    log2 "Found" $N_luadns_record_id "Record IDs?? - Will delete all of them"
+  N_luadns_record_id="$(wc -l <<<"${luadns_record_id}")"
+  if (( N_luadns_record_id > 1 )); then
+    log2 "Found $N_luadns_record_id Record IDs?? - Will delete all of them"
   fi
 
   # Loop through all record IDs
   for ((k=1; k<=N_luadns_record_id; k++)); do
-    local luadns_record_id_2="$(sed -n "$k"p <<<"${luadns_record_id}")"
+    luadns_record_id_2="$(sed -n "$k"p <<<"${luadns_record_id}")"
 
     # Use the zone_id and the record_id to delete the record & Check Response
-    if ! local response="$(curl_cmd -X DELETE "${lua_api_url}"/zones/${luadns_zone_id}/records/${luadns_record_id_2})"; then local response="null"; fi
+    if ! response="$(curl_cmd -X DELETE "${lua_api_url}/zones/${luadns_zone_id}/records/${luadns_record_id_2}")"; then  response="null"; fi
     check_response_was_valid "${response}"
   
     # Check for success - Was the same record id returned after the deletion?
-    if ! local success_check="$(jq -r ".id" <<<"${response}")"; then local success_check="null"; fi
+    if ! success_check="$(jq -r ".id" <<<"${response}")"; then success_check="null"; fi
     if [[ "${success_check}" == "${luadns_record_id_2}" ]]; then
       log2 "Record:" "${luadns_record_id_2}" "Successfully Deleted"
     else
@@ -263,30 +276,31 @@ luadns_delete_record() {
 # Wait for the record to be live on all of the Nameservers obtained earlier
 wait_for_record_to_propagate() {
   local delay_time=2
-  local retries=11
+  local retries=8
   local luadns_record_name="${1}" 
   local luadns_record_content="${2}"
   local i=1
   local j=1
-  log1 "Querying all" $N_zone_ns_records "${zone_name}" "Nameservers for Record..."
+  log1 "Querying all $N_zone_ns_records ${zone_name} Nameservers for Record..."
 
   # Loop through each of the Zone NS Records to Query each of them up to a maximum of 11 trys
   for ((j=1; j<=N_zone_ns_records; j++)); do
-    local nameserver="$(sed -n "$j"p <<<"${zone_ns_records}")"
-    log2 "Nameserver" $j"/"$N_zone_ns_records":" "${nameserver}" 
+    local nameserver
+    nameserver="$(sed -n "$j"p <<<"${zone_ns_records}")"
+    log2 "Nameserver $j/$N_zone_ns_records: ${nameserver}" 
 
     # Try Querying each Nameserver up to a max of $retries
     for ((i=1; i<=retries; i++)); do
-      wait_time=$(($delay_time**$i))
+      wait_time=$((delay_time**i))
       log3 "Waiting" $wait_time "seconds"
       sleep $wait_time
     
       # Check to see if the record has been deployed or not
-      log3 "Querying for record - Try:" $i"/"$retries
+      log3 "Querying for record - Try: $i/$retries"
       if query_nameserver "${nameserver}" "${luadns_record_name}" "${luadns_record_content}"; then
         log3 "Record live"
         break
-      elif [[ $i == $retries ]]; then
+      elif (( i == retries )); then
         error "ERROR: Record not live after" $retries "tries - Exiting"
       else
         log3 "Record not yet live - Retrying..."
@@ -302,7 +316,7 @@ wait_for_record_to_propagate() {
 check_div_by_3() {
   local args_number1=$#
   local args_number_check=$(( args_number1 % 3))
-  if [[ $args_number_check != 0 ]]; then
+  if (( args_number_check > 0 )); then
     error "ERROR: Invalid number of arguments specified - It should be a multiple of 3."
   fi
 }
@@ -313,7 +327,7 @@ check_div_by_3() {
 
 # Deploy Single Challenge Function - $1 = Domain, $2 = TXT Record Value
 deploy_single_challenge() {
-  local domain="${1}" token_filename="${2}" token_value="${3}"
+  local domain="${1}" token_value="${3}"
 
   # Append the "_acme-challenge." to the domain
   local record_name="${prefix}""${domain}"
@@ -324,16 +338,16 @@ deploy_single_challenge() {
 
   # Extract the Root Domain to allow getting the Zone ID
   get_zone_name_from_fqdn "${record_name}"
-  log1 "Zone Name:" "${zone_name}"
+  log1 "Zone Name: ${zone_name}"
 
   # Now Query the Luadns nameservers for the actual NS records
   get_zone_nameservers "${zone_name}"
-  log1 "Deploying record via" "${lua_api_url}""..."
+  log1 "Deploying record via ${lua_api_url}..."
 
   # Get Zone ID From LuaDNS API...
   log2 "Getting Zone ID..."
-  luadns_get_zone_id ${zone_name}
-  log2 "Zone ID:" $zone_id
+  luadns_get_zone_id "${zone_name}"
+  log2 "Zone ID: $zone_id"
 
   # Create Record using LuaDNS API (Type TXT) & Wait for Publication
   luadns_create_new_record "${zone_id}" "${record_name}" "TXT" "${token_value}"
@@ -342,7 +356,7 @@ deploy_single_challenge() {
 
 # Clean Single Challenge Function - $1 = Domain, $2 = TXT Record Value
 clean_single_challenge() {
-  local domain="${1}" token_filename="${2}" token_value="${3}"
+  local domain="${1}" token_value="${3}"
 
   # Append the "_acme-challenge." to the domain 
   local record_name="${prefix}""${domain}"
@@ -358,10 +372,10 @@ clean_single_challenge() {
 
   # Get the Zone ID & then the Record ID From the LuaDNS API
   log2 "Getting Zone ID..."
-  luadns_get_zone_id ${zone_name}
-  log2 "Zone ID:" $zone_id
+  luadns_get_zone_id "${zone_name}"
+  log2 "Zone ID: $zone_id"
   log2 "Getting Record ID..."
-  luadns_get_record_id ${zone_id} ${record_name} "${token_value}"
+  luadns_get_record_id "${zone_id}" "${record_name}" "${token_value}"
 
   # Print the 1st Record ID found and delete the record
   log2 "Record ID:" "$(sed -n 1p <<<"${record_id}")"
@@ -455,7 +469,7 @@ deploy_cert() {
     else
       log2 "WARNING: Script return status indicates an error"
     fi
-  elif [[ -z "${script}" ]]; then
+  elif [[ ! -x "${script}" ]]; then
     log1 "Not Calling Script: ${script} as it either does not exist or is not executable"
   fi
   exit 0
@@ -474,7 +488,7 @@ exit_hook() {
     else
       log2 "WARNING: Exit Hook Script return status indicates an error"
     fi
-  elif [[ -z "${script}" ]]; then
+  elif [[ ! -x "${script}" ]]; then
     log1 "Not Calling Script: ${script} as it either does not exist or is not executable"
   fi
   exit 0
