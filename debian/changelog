@@ -1,3 +1,28 @@
+dehydrated-hook-luadns (1.0.5-1) stable; urgency=medium
+
+  * Ran ShellCheck on the script and cleaned up all warnings.
+
+  * Added a "--fail" to curl so the script correctly obtains
+    error codes for failed curl calls.
+
+  * Added check for wc, ip & sleep commands.
+
+  * Changed max number of retries when trying the nameservers for
+    the deployed record to 8 from 11.
+
+  * Build json data directly using jq for the deployment of the
+    record for better robustness.
+
+  * Change response check to validate that valid json data was
+    received instead of just looking at the length of the string
+    the server returned.
+
+  * Removed usage of "echo".
+
+  * Other minor code improvements.
+
+ -- Mark <mark9000@fastmail.org>  Wed, 08 Jul 2026 20:55:39 +0100
+
 dehydrated-hook-luadns (1.0.4-1) stable; urgency=medium
 
   * Small update: Remove the usage of "true" in favor of a
