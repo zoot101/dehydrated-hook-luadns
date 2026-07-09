@@ -17,6 +17,7 @@ Depends:
  curl (>=7.8),
  dehydrated (>=0.7.0),
  bind9-dnsutils (>=9.11),
+ publicsuffix (>=20250101),
  ${misc:Depends},
 Description: dehydrated hook script for Luadns.com
  For use with dehydrated
