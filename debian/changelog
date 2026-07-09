@@ -1,3 +1,31 @@
+dehydrated-hook-luadns (1.1.0-1) stable; urgency=medium
+
+  * The Record passed into the script is now checked against
+    the Public Suffix List. This will correctly identify
+    all valid TLDs used today. 
+    - This will address the issue where the script would have
+      failed to get the domain name for TLDs like ".co.uk"
+      or ".com.au" etc.
+    - Added a dependency on "publicsuffix" for the Debian
+      package.
+
+  * Changed to standard DNS lookup for the CNAME check, this
+    is to allow for domains not hosted at Luadns.com
+    pointing to domains that are hosted there.
+
+  * Added a check that if the record already exists then
+    it is not deployed again to prevent duplicates of the
+    same record.
+
+  * Make jq calls more robust.
+
+  * Removed the usage of "awk", along with the dependency
+    from the debian package.
+
+  * Other minor code improvements.
+
+ -- Mark <mark9000@fastmail.org>  Thu, 09 Jul 2026 21:32:13 +0100
+
 dehydrated-hook-luadns (1.0.5-1) stable; urgency=medium
 
   * Ran ShellCheck on the script and cleaned up all warnings.
