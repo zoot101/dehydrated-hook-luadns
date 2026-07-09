@@ -66,9 +66,10 @@ To use this script with **dehydrated**, the following is required up front:
 
 * Ownership of a valid domain name with its DNS hosted at [Luadns.com](https://luadns.com).    
   - Luadns servers (ns[1-4].luadns.net) configured for the Domain at your Domain Registrar.   
+  - The domain is validated for a valid TLD against the [Public Suffix List](https://publicsuffix.org/).
 * API access enabled in the Luadns.com account settings for the Domain.    
 * A valid API Key created for the zone in question
-  - Example: For record.example.org, **example.org** is the Zone)    
+  - Example: For record.example.org, **example.org** is the Zone)   
 
 # Usage and Installation
 
@@ -113,10 +114,10 @@ Next install the required dependencies:
 
 ```bash
 # On Debian based distros
-sudo apt install curl bind9-dnsutils jq
+sudo apt install curl bind9-dnsutils jq publicsuffix
 
 # On Fedora
-sudo dnf install curl bind-utils jq
+sudo dnf install curl bind-utils jq publicsuffix
 ```
 
 Note if using [IPFire](https://ipfire.org), the above dependencies are included by
