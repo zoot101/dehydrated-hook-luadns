@@ -6,7 +6,7 @@
 ###############################
 
 # Version Number
-readonly version="1.0.5"
+readonly version="1.1.0"
 
 # Modern Error Handling
 set -euo pipefail
@@ -16,6 +16,7 @@ set -euo pipefail
 ###############################
 readonly lua_api_url="https://api.luadns.com/v1" 
 readonly prefix="_acme-challenge."
+readonly suffix_list_file="/usr/share/publicsuffix/effective_tld_names.dat"
 readonly -a luadns_nameservers=( "ns1.luadns.net" "ns2.luadns.net" \
                      "ns3.luadns.net" "ns4.luadns.net" )
 
@@ -39,6 +40,15 @@ log3() {
 error() {
   printf '%s\n' " + Hook: ERROR: $*"
   exit 1
+}
+
+# Unset Vars
+unset_vars() {
+  zone_id=
+  record_id=
+  zone_name=
+  zone_ns_records=
+  record_name=
 }
 
 # Dig Command if the query_source_ip parameter is defined
@@ -68,20 +78,20 @@ query_zone_ns_records() {
   dig_cmd @"${auth_nameserver}" NS "${fqdn}" | sort
 }
 
-# Query Auth Nameserver for TXT Record Deployed using dig - Added escaped " to Close #3
+# Query Auth Nameserver for TXT Record Deployed using dig
 query_nameserver() {
   local auth_server="${1}"
   local name="${2}"
   local content="${3}"
-  dig_cmd @"${auth_server}" TXT "${name}" | grep -qF \""${content}"\"
+  dig_cmd @"${auth_server}" TXT "${name}" | tr -d '"' | grep -Fxq "${content}"
 }
 
-# Base Curl Command as per the Luadns.com REST API documentation
+# Base Curl Command as per the Luadns.com documentation
 curl_cmd() {
   curl --fail --retry 3 --silent --show-error -u "${lua_email}:${lua_api_key}" -H 'Accept: application/json' -H "Content-Type: application/json" "$@"
 }
 
-# Check that the lua_email and lua_api_token variables have been defined
+# Check for the lua_email and lua_api_token
 luadns_credentials_check(){
   if [[ -z "${lua_email:-}" ]]; then
     error "Luadns Email (lua_email) not specified - Exiting"
@@ -92,44 +102,82 @@ luadns_credentials_check(){
 
 # Check dependencies are installed
 check_dependencies() {
-  local -a dependencies=( "curl" "dig" "grep" "awk" "sed" "jq" "sort" "wc" "ip" "sleep" "bash")
+  local -a dependencies=( "curl" "dig" "grep" "sed" "jq" "sort" "wc" "ip" "sleep" "bash")
   for cmd in "${dependencies[@]}"; do
     if ! command -v "${cmd}" &>"/dev/null"; then error "${cmd} is not installed - Exiting"; fi
   done
 }
 
-# Check if the Record passed from dehydrated is a CNAME. If so use that instead.
+# Check if the Record is a CNAME. If so use that instead.
+# Standard DNS is used here to allow for domains not hosted at Luadns pointing
+# to a domain that is hosted there. Use sed to pick the 1st match.
 check_for_cname() {
   local fqdn="${1}"
-  local auth_server="${luadns_nameservers[0]}"
   local cname_check
-  log1 "Checking if ${fqdn} is a CNAME..."
+  log2 "Checking for a CNAME..."
   if [[ -n "${fqdn}" ]]; then
-    if cname_check="$(dig_cmd @"${auth_server}" CNAME "${fqdn}")"; then
+    if cname_check="$(dig_cmd CNAME "${fqdn}" | sed -n 1p)"; then
       if [[ -n "${cname_check}" ]]; then
-      log1 "CNAME Found: ${cname_check} - Proceeding with that instead"
-      record_name="${cname_check}"
+      log2 "CNAME Found: ${cname_check} - Proceeding with that instead"
+      record_name="${cname_check%.}" # Remove trailing dot if present
       else
-        log1 "No CNAME found..."
+        log2 "No CNAME found..."
       fi
     else
-      log1 "No CNAME found..."
+      log2 "No CNAME found..."
     fi
   fi
 }
 
+# Check Record already exists. This is to prevent the deployment of
+# multiple records of the exact same content
+check_record_already_exists() {
+  local record="${1}"
+  local record_content="${2}"
+
+  # Loop through the Zone Nameservers, if anyone of them delivers a match then exit
+  for ((j=1; j<=N_zone_ns_records; j++)); do
+    local nameserver
+    nameserver="$(sed -n "$j"p <<<"${zone_ns_records}")"
+    if dig_cmd @"${nameserver}" TXT "${record}" | tr -d '"' | grep -Fxq "${record_content}"; then
+      return 0
+    fi
+  done
+  return 1
+}
+
 # Break the fqdn apart to isolate the zone name (example.tld)
-get_zone_name_from_fqdn() {
-  local fqdn="${1}"
+get_zone_name_from_record() {
+  local record="${1}"
+  local domain tld record_parts N_parts
 
-  # Exit if the fqdn is empty or does not have at least 1 dot.
-  if [[ -z "${fqdn}" || -z "$(awk -F "." '{print $2}' <<<"${fqdn}")" ]]; then error "Invalid fqdn: ${fqdn} supplied!"; fi
+  # Exit if the record is empty or does not have at least 1 dot.
+  if [[ -z "${record}" || "${record}" != *.* ]]; then
+    error "Invalid record: ${record} supplied!"
+  fi
 
-  # Remove trailing dot - required to present for Record ID, but not Zone ID
-  if [[ "${fqdn: -1}" == "." ]]; then fqdn="${fqdn::-1}"; fi 
- 
-  # Pick Everything after the 2nd last "." to get the root-domain
-  zone_name="$( awk -F "." '{ printf $(NF-1)"."$NF}' <<<"${fqdn}")"
+  # Strip Trailing Dot if present & read into array
+  record="${record%.}"
+  IFS="." read -r -a record_parts <<<"${record}"
+  N_parts=${#record_parts[@]}
+
+  # Strip record parts down until a Public Suffix match
+  for ((i=0; i<=(N_parts-2); i++)); do
+    IFS="."
+    domain="${record_parts[*]:$i:$N_parts}"
+    tld="${record_parts[*]:$((i+1)):$N_parts}"
+    if grep -qx "^${tld}" "${suffix_list_file}"; then
+      log2 "Valid Toplevel Domain Found: ${tld}"
+      log2 "Zone Name: ${domain}"
+      break
+    fi
+
+    # Exit if all parts of the record yield no match
+    if (( i==(N_parts-2) )); then
+      error "Record has invalid Toplevel Domain: ${tld}"
+    fi
+  done
+  zone_name="${domain}"
 }
 
 # Get NS Records for Zone (Root of the domain passed in)
@@ -179,11 +227,11 @@ luadns_get_zone_id() {
   local response
   local luadns_zone_name="${1}"
   if [[ -z "${luadns_zone_name}" ]]; then error "Zone Name is empty"; fi
-  if ! response="$(curl_cmd "${lua_api_url}"/zones)"; then response="null";fi
+  if ! response="$(curl_cmd "${lua_api_url}"/zones)"; then response="invalid";fi
   check_response_was_valid "${response}"
 
   # Parse Response with jq command to pick out the Zone ID & Check if it's a number
-  if ! zone_id="$(jq -r ".[] | select(.name==\"${luadns_zone_name}\").id" <<<"${response}")"; then zone_id="null"; fi 
+  if ! zone_id="$(jq -r --arg zone "$luadns_zone_name" '.[] | select(.name==$zone).id' <<<"${response}")"; then zone_id="invalid"; fi
   if ! is_number "${zone_id}"; then error "Zone ID could not be obtained - Problem with API Key?"; fi
 }
 
@@ -196,7 +244,7 @@ luadns_create_new_record() {
   local response success_check json_data
 
   # Add trailing dot if not present - required for the Record ID
-  if [[ "${luadns_record:0-1}" != "." ]]; then luadns_record="${luadns_record}""."; fi
+  if [[ "${luadns_record:0-1}" != "." ]]; then luadns_record+="."; fi
 
   # Create New Record as per official API Documentation & Check Response
   json_data="$(
@@ -210,11 +258,11 @@ luadns_create_new_record() {
           }'
   )"
 
-  if ! response="$(curl_cmd -X POST -d "${json_data}" "${lua_api_url}/zones/$luadns_zone_id/records")"; then response="null"; fi
+  if ! response="$(curl_cmd -X POST -d "${json_data}" "${lua_api_url}/zones/$luadns_zone_id/records")"; then response="invalid"; fi
   check_response_was_valid "${response}"
 
   # Check the record content deployed was received back
-  if ! success_check="$(jq -r ".content" <<<"${response}")"; then success_check="null"; fi
+  if ! success_check="$(jq -r ".content" <<<"${response}")"; then success_check="invalid"; fi
   if [[ "${success_check}" == "${luadns_record_content}" ]]; then
     log2 "Record successfully deployed."
   else
@@ -230,15 +278,20 @@ luadns_get_record_id() {
   local response
 
   # Add trailing dot if not present - required for the Record ID
-  if [[ "${luadns_record_name:0-1}" != "." ]]; then luadns_record_name="${luadns_record_name}""."; fi
+  if [[ "${luadns_record_name:0-1}" != "." ]]; then luadns_record_name+="."; fi
 
   # Get the record id for the above record using the API & Check Response
-  if ! response="$(curl_cmd "${lua_api_url}/zones/${luadns_zone_id}/records")"; then response="null"; fi
+  if ! response="$(curl_cmd "${lua_api_url}/zones/${luadns_zone_id}/records")"; then response="invalid"; fi
   check_response_was_valid "${response}" 
 
   # Process the json data received to select TXT Type, Name and Content & Check Response
   # (Can't use number check here as in certain edge cases multiple IDs are received...)
-  if ! record_id="$(jq -r ".[] | select(.name==\"${luadns_record_name}\" and .type==\"TXT\" and .content==\"${luadns_record_content}\").id" <<<"${response}")"; then record_id="null"; fi
+  if ! record_id="$(jq -r --arg record_name "${luadns_record_name}" \
+                          --arg record_content "${luadns_record_content}" \
+                          --arg record_type "TXT" \
+                    '.[] | select(.name==$record_name and .type==$record_type and .content==$record_content).id' <<<"${response}")"; then
+    record_id="invalid"
+  fi
   if [[ -z "${record_id}" ]]; then error "ERROR: Record ID could not be obtained - Does the record exist?"; fi
 }
 
@@ -260,11 +313,11 @@ luadns_delete_record() {
     luadns_record_id_2="$(sed -n "$k"p <<<"${luadns_record_id}")"
 
     # Use the zone_id and the record_id to delete the record & Check Response
-    if ! response="$(curl_cmd -X DELETE "${lua_api_url}/zones/${luadns_zone_id}/records/${luadns_record_id_2}")"; then  response="null"; fi
+    if ! response="$(curl_cmd -X DELETE "${lua_api_url}/zones/${luadns_zone_id}/records/${luadns_record_id_2}")"; then response="invalid"; fi
     check_response_was_valid "${response}"
   
     # Check for success - Was the same record id returned after the deletion?
-    if ! success_check="$(jq -r ".id" <<<"${response}")"; then success_check="null"; fi
+    if ! success_check="$(jq -r ".id" <<<"${response}")"; then success_check="invalid"; fi
     if [[ "${success_check}" == "${luadns_record_id_2}" ]]; then
       log2 "Record:" "${luadns_record_id_2}" "Successfully Deleted"
     else
@@ -281,6 +334,7 @@ wait_for_record_to_propagate() {
   local luadns_record_content="${2}"
   local i=1
   local j=1
+  local wait_time
   log1 "Querying all $N_zone_ns_records ${zone_name} Nameservers for Record..."
 
   # Loop through each of the Zone NS Records to Query each of them up to a maximum of 11 trys
@@ -314,8 +368,8 @@ wait_for_record_to_propagate() {
 
 # Check number of arguments are divisble by 3 - Required for HOOK_CHAIN
 check_div_by_3() {
-  local args_number1=$#
-  local args_number_check=$(( args_number1 % 3))
+  local arg_count=$#
+  local args_number_check=$(( arg_count % 3))
   if (( args_number_check > 0 )); then
     error "ERROR: Invalid number of arguments specified - It should be a multiple of 3."
   fi
@@ -330,21 +384,30 @@ deploy_single_challenge() {
   local domain="${1}" token_value="${3}"
 
   # Append the "_acme-challenge." to the domain
-  local record_name="${prefix}""${domain}"
+  record_name="${prefix}""${domain}"
   log1 "Record Name:${record_name}, Type:TXT, Value:${token_value}"
  
   # Check if the Record is a CNAME, if so use what the CNAME points to instead
   check_for_cname "${record_name}"
 
   # Extract the Root Domain to allow getting the Zone ID
-  get_zone_name_from_fqdn "${record_name}"
-  log1 "Zone Name: ${zone_name}"
+  get_zone_name_from_record "${record_name}"
 
   # Now Query the Luadns nameservers for the actual NS records
   get_zone_nameservers "${zone_name}"
-  log1 "Deploying record via ${lua_api_url}..."
+
+  # Check whether any authoritative nameserver already serves
+  # the requested TXT record. If so, skip creating another one.
+  log1 "Checking if Record already exists..."
+  if check_record_already_exists "${record_name}" "${token_value}"; then
+    log2 "Record already exists - Skipping deployment"
+    return 0
+  else
+    log2 "Record does not already exist - Proceeding"
+  fi
 
   # Get Zone ID From LuaDNS API...
+  log1 "Deploying record via ${lua_api_url}..."
   log2 "Getting Zone ID..."
   luadns_get_zone_id "${zone_name}"
   log2 "Zone ID: $zone_id"
@@ -359,16 +422,15 @@ clean_single_challenge() {
   local domain="${1}" token_value="${3}"
 
   # Append the "_acme-challenge." to the domain 
-  local record_name="${prefix}""${domain}"
+  record_name="${prefix}""${domain}"
   log1 "Record Name:${record_name}, Type:TXT, Value:${token_value}"  
 
   # Check if the Record is a CNAME, if so use what the CNAME points to instead
   check_for_cname "${record_name}"
 
   # Extract the Root Domain to allow getting the Zone ID
-  get_zone_name_from_fqdn "${record_name}"
-  log1 "Zone Name:" "${zone_name}"
-  log1 "Deleting record via" "${lua_api_url}""..."
+  get_zone_name_from_record "${record_name}"
+  log1 "Deleting record via ${lua_api_url}..."
 
   # Get the Zone ID & then the Record ID From the LuaDNS API
   log2 "Getting Zone ID..."
@@ -384,6 +446,7 @@ clean_single_challenge() {
 
 # Main Deploy Challenge Function
 deploy_challenge() {
+  unset_vars
   check_dependencies
   luadns_credentials_check
 
@@ -391,6 +454,7 @@ deploy_challenge() {
   local args_number=$#
   check_div_by_3 "$@"
   local challenges_number=$(( args_number / 3 ))
+  local index_d
 
   # If the query_source_ip option was used - check it corresponds to a local interface
   if [[ -n "${query_source_ip:-}" ]] && ! ip addr | grep -qw "${query_source_ip:-}"; then
@@ -420,6 +484,7 @@ deploy_challenge() {
 
 # Main Clean Challenge Function
 clean_challenge() {
+  unset_vars
   check_dependencies
   luadns_credentials_check
 
@@ -427,6 +492,7 @@ clean_challenge() {
   local args_number=$#
   check_div_by_3 "$@"
   local challenges_number=$(( args_number / 3 ))
+  local index_c
 
   # Print Greeting Banner & Loop Through the Inputs in Groups of 3
   log1 "############################"
