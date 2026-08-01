@@ -248,7 +248,7 @@ action and pass the error message into it.
 
 This option can be used to get the hook script to call another custom script when **dehydrated**
 exits with an error condition. This can be useful to do something such as notify the user if
-an error condition occured. Example:
+an error condition occurred. Example:
 
 * export exit\_hook\_script="/path/to/exit/hook/script"
 
