@@ -6,7 +6,7 @@
 ###############################
 
 # Version Number
-readonly version="1.1.0"
+readonly version="1.1.1"
 
 # Modern Error Handling
 set -euo pipefail
@@ -166,7 +166,7 @@ get_zone_name_from_record() {
     IFS="."
     domain="${record_parts[*]:$i:$N_parts}"
     tld="${record_parts[*]:$((i+1)):$N_parts}"
-    if grep -qx "^${tld}" "${suffix_list_file}"; then
+    if grep -qx "^${tld}$" "${suffix_list_file}"; then
       log2 "Valid Toplevel Domain Found: ${tld}"
       log2 "Zone Name: ${domain}"
       break
@@ -178,6 +178,9 @@ get_zone_name_from_record() {
     fi
   done
   zone_name="${domain}"
+
+  # Restore IFS
+  IFS=$' \t\n'
 }
 
 # Get NS Records for Zone (Root of the domain passed in)
@@ -292,7 +295,7 @@ luadns_get_record_id() {
                     '.[] | select(.name==$record_name and .type==$record_type and .content==$record_content).id' <<<"${response}")"; then
     record_id="invalid"
   fi
-  if [[ -z "${record_id}" ]]; then error "ERROR: Record ID could not be obtained - Does the record exist?"; fi
+  if ! is_number "${record_id}"; then error "Record ID could not be obtained - Does the record exist?"; fi
 }
 
 # Delete a record using the LuaDNS API
@@ -346,7 +349,7 @@ wait_for_record_to_propagate() {
     # Try Querying each Nameserver up to a max of $retries
     for ((i=1; i<=retries; i++)); do
       wait_time=$((delay_time**i))
-      log3 "Waiting" $wait_time "seconds"
+      log3 "Waiting $wait_time seconds"
       sleep $wait_time
     
       # Check to see if the record has been deployed or not
@@ -355,7 +358,7 @@ wait_for_record_to_propagate() {
         log3 "Record live"
         break
       elif (( i == retries )); then
-        error "ERROR: Record not live after" $retries "tries - Exiting"
+        error "Record not live after" $retries "tries - Exiting"
       else
         log3 "Record not yet live - Retrying..."
       fi
@@ -371,7 +374,7 @@ check_div_by_3() {
   local arg_count=$#
   local args_number_check=$(( arg_count % 3))
   if (( args_number_check > 0 )); then
-    error "ERROR: Invalid number of arguments specified - It should be a multiple of 3."
+    error "Invalid number of arguments specified - It should be a multiple of 3."
   fi
 }
 
@@ -469,7 +472,7 @@ deploy_challenge() {
   index_d=1
   while (( ${#} )); do
     log1 "############################"
-    log1 "+ deploy_challenge:" $index_d "of" $challenges_number
+    log1 "+ deploy_challenge: $index_d of $challenges_number"
     log1 "############################"
     if [[ -n "${query_source_ip:-}" ]]; then log1 "DNS Query Source IP: ${query_source_ip:-}"; fi
     deploy_single_challenge "${1}" "${2}" "${3}"
@@ -500,7 +503,7 @@ clean_challenge() {
   index_c=1
   while (( ${#} )); do
     log1 "############################"
-    log1 "+ clean_challenge:" $index_c "of" $challenges_number
+    log1 "+ clean_challenge: $index_c of $challenges_number"
     log1 "############################"
     clean_single_challenge "${1}" "${2}" "${3}"
     shift 3
