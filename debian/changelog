@@ -1,3 +1,19 @@
+dehydrated-hook-luadns (1.1.1-1) stable; urgency=medium
+
+  * Fixed an issue that if the Record ID could not be
+    obtained, the script would exit in an uncontrolled
+    manner with an error. Now the script will exit more
+    gracefully.
+
+  * Correctly restore IFS to prevent some problems in
+    printouts.
+
+  * Fix error printouts.
+
+  * Fixed typo [#6] - @Jah-yee
+
+ -- Mark <mark9000@fastmail.org>  Sun, 20 Sep 2026 00:23:01 +0100
+
 dehydrated-hook-luadns (1.1.0-1) stable; urgency=medium
 
   * The Record passed into the script is now checked against
